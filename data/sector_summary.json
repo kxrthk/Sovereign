@@ -1,0 +1,47 @@
+{
+  "NIFTY_50": {
+    "latest": 22713.1,
+    "1y_return_pct": -4.0,
+    "rows": 495
+  },
+  "NIFTY_BANK": {
+    "latest": 51548.75,
+    "1y_return_pct": -0.1,
+    "rows": 494
+  },
+  "NIFTY_IT": {
+    "latest": 30441.45,
+    "1y_return_pct": -19.3,
+    "rows": 494
+  },
+  "NIFTY_PHARMA": {
+    "latest": 21808.4,
+    "1y_return_pct": 0.2,
+    "rows": 493
+  },
+  "NIFTY_METAL": {
+    "latest": 11456.6,
+    "1y_return_pct": 23.7,
+    "rows": 492
+  },
+  "NIFTY_AUTO": {
+    "latest": 24089.65,
+    "1y_return_pct": 9.8,
+    "rows": 492
+  },
+  "NIFTY_ENERGY": {
+    "latest": 35299.4,
+    "1y_return_pct": 4.0,
+    "rows": 492
+  },
+  "NIFTY_FMCG": {
+    "latest": 46232.15,
+    "1y_return_pct": -13.2,
+    "rows": 492
+  },
+  "NIFTY_REALTY": {
+    "latest": 672.1,
+    "1y_return_pct": -23.3,
+    "rows": 492
+  }
+}

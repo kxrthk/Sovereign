@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pandas
+yfinance
+pandas_ta
+pydantic
+requests
+chromadb
+PyPDF2
+sentence-transformers

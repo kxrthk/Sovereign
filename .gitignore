@@ -1,0 +1,39 @@
+# Environments
+.env
+
+# Dependencies
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+venv/
+env/
+.venv/
+
+# AI and RAG Databases
+vector_db/
+memories/
+
+# App Logs & Data
+logs/
+bot.log
+trading_journal.csv
+*.sqlite3
+
+# Binaries and Large Executables
+OllamaSetup.exe
+temp_vision.png
+
+# Workspaces / IDE
+.idea/
+.vscode/
+
+# Build and Shortcuts
+dist/
+*.lnk
+"New Text Document.txt"
+
+# System Files
+.DS_Store
+Thumbs.db

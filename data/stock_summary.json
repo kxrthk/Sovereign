@@ -1,0 +1,368 @@
+{
+  "RELIANCE.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 1350.5
+  },
+  "HDFCBANK.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 750.9
+  },
+  "TCS.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 2450.7
+  },
+  "INFY.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 1300.8
+  },
+  "ICICIBANK.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 1215.8
+  },
+  "ITC.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 292.85
+  },
+  "BHARTIARTL.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 1789.7
+  },
+  "ADANIENT.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 1834.2
+  },
+  "SBIN.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 1018.4
+  },
+  "AXISBANK.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 1197.9
+  },
+  "KOTAKBANK.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 358.0
+  },
+  "BAJFINANCE.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 826.85
+  },
+  "HDFCLIFE.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 566.1
+  },
+  "BAJAJFINSV.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 1640.7
+  },
+  "SUNPHARMA.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 1693.6
+  },
+  "DRREDDY.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 1217.3
+  },
+  "CIPLA.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 1192.4
+  },
+  "DIVISLAB.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 5856.5
+  },
+  "ONGC.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 287.2
+  },
+  "POWERGRID.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 289.95
+  },
+  "NTPC.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 359.65
+  },
+  "BPCL.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 278.15
+  },
+  "COALINDIA.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 449.35
+  },
+  "TATASTEEL.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 194.14
+  },
+  "HINDALCO.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 916.25
+  },
+  "JSWSTEEL.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 1141.3
+  },
+  "ULTRACEMCO.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 10620.0
+  },
+  "MARUTI.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 12631.0
+  },
+  "BAJAJ-AUTO.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 8758.5
+  },
+  "EICHERMOT.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 6649.5
+  },
+  "M&M.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 3011.7
+  },
+  "HEROMOTOCO.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 5011.5
+  },
+  "HINDUNILVR.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 2065.3
+  },
+  "BRITANNIA.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 5442.0
+  },
+  "NESTLEIND.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 1191.3
+  },
+  "TATACONSUM.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 1042.0
+  },
+  "ASIANPAINT.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 2169.0
+  },
+  "TITAN.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 4097.2
+  },
+  "PAYTM.NS": {
+    "rows": 1081,
+    "start": "2021-11-18",
+    "end": "2026-04-02",
+    "latest_close": 1006.0
+  },
+  "HCLTECH.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 1402.2
+  },
+  "WIPRO.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 194.91
+  },
+  "TECHM.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 1441.5
+  },
+  "MPHASIS.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 2209.9
+  },
+  "LTIM.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 4303.9
+  },
+  "LT.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 3613.1
+  },
+  "KEC.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 529.5
+  },
+  "AHLUCONT.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 694.3
+  },
+  "PNC.NS": {
+    "rows": 1235,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 19.19
+  },
+  "NBCC.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 83.09
+  },
+  "PAGEIND.NS": {
+    "rows": 1235,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 33945.0
+  },
+  "RAYMOND.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 351.0
+  },
+  "ARVIND.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 365.25
+  },
+  "TRIDENT.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 24.12
+  },
+  "MAZDOCK.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 2264.6
+  },
+  "ADANIPORTS.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 1377.6
+  },
+  "COCHINSHIP.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 1314.5
+  },
+  "GESHIP.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 1439.6
+  },
+  "HAL.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 3687.0
+  },
+  "BEL.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 421.6
+  },
+  "BEML.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 1482.5
+  },
+  "NLCINDIA.NS": {
+    "rows": 1236,
+    "start": "2021-04-05",
+    "end": "2026-04-02",
+    "latest_close": 278.6
+  }
+}

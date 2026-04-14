@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOVEREIGN | Mission Control</title>
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #131722;
+            color: #d1d4dc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .header {
+            padding: 15px 20px;
+            background-color: #1e222d;
+            border-bottom: 1px solid #2b3139;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .title {
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: #ffb703;
+        }
+
+        .defcon-badge {
+            padding: 5px 15px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .defcon-SAFE {
+            background-color: #089981;
+            color: white;
+        }
+
+        .defcon-CAUTION {
+            background-color: #f5cb5c;
+            color: #131722;
+        }
+
+        .defcon-DANGER {
+            background-color: #f23645;
+            color: white;
+        }
+
+        .container {
+            display: flex;
+            height: calc(100vh - 61px);
+        }
+
+        .sidebar {
+            width: 300px;
+            background-color: #1e222d;
+            border-right: 1px solid #2b3139;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .main-chart {
+            flex-grow: 1;
+            position: relative;
+        }
+
+        #chart-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        .trade-card {
+            background-color: #2b3139;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            border-left: 4px solid #4a4a4a;
+            transition: 0.2s;
+        }
+
+        .trade-card:hover {
+            background-color: #363c46;
+        }
+
+        .trade-card.buy {
+            border-color: #089981;
+        }
+
+        .trade-card.sell {
+            border-color: #f23645;
+        }
+
+        .tc-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .tc-details {
+            font-size: 12px;
+            color: #8a919e;
+        }
+
+        .macro-justification {
+            font-size: 12px;
+            margin-top: 5px;
+            color: #8a919e;
+            font-style: italic;
+        }
+
+        #vision-modal {
+            display: none;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 350px;
+            background: #1e222d;
+            border: 1px solid #2b3139;
+            padding: 15px;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            border-radius: 6px;
+        }
+
+        .vc-item {
+            margin-bottom: 10px;
+            border-bottom: 1px solid #2b3139;
+            padding-bottom: 5px;
+        }
+
+        .vc-item:last-child {
+            border-bottom: none;
+        }
+
+        .vc-label {
+            font-size: 11px;
+            color: #8a919e;
+            text-transform: uppercase;
+        }
+
+        .vc-value {
+            font-size: 13px;
+            font-weight: bold;
+            color: #d1d4dc;
+            margin-top: 3px;
+        }
+
+        .control-panel {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 6px 15px;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-buy {
+            background: #089981;
+            color: white;
+        }
+
+        .btn-sell {
+            background: #f23645;
+            color: white;
+        }
+
+        .btn-viz {
+            background: #2962FF;
+            color: white;
+        }
+
+        select {
+            padding: 6px;
+            background: #2b3139;
+            color: #d1d4dc;
+            border: 1px solid #4a4a4a;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <div class="title">SOVEREIGN V2</div>
+        <div class="control-panel">
+            <select id="asset-selector"></select>
+            <button id="btn-buy" class="btn btn-buy">BUY</button>
+            <button id="btn-sell" class="btn btn-sell">SELL</button>
+            <button id="btn-vision" class="btn btn-viz">🔮 Ask AI (Vision)</button>
+        </div>
+        <div style="text-align: right;">
+            <span id="defcon-status" class="defcon-badge defcon-SAFE">DEFCON SAFE</span>
+            <div id="macro-just" class="macro-justification">Loading macro state...</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="sidebar" id="trade-log">
+            <h3 style="margin-top:0; color:#8a919e; font-size:14px; text-transform:uppercase;">Flight Recorder</h3>
+            <!-- Trade cards will be injected here -->
+        </div>
+        <div class="main-chart">
+            <div id="chart-container"></div>
+            <div id="vision-modal">
+                <div
+                    style="display:flex; justify-content:space-between; margin-bottom:15px; border-bottom:1px solid #4a4a4a; padding-bottom:5px;">
+                    <strong style="color:#ffb703;">🧠 VISION CENTRE</strong>
+                    <span onclick="document.getElementById('vision-modal').style.display='none'"
+                        style="cursor:pointer; color:#8a919e;">✖</span>
+                </div>
+                <div id="vision-content" style="max-height: 400px; overflow-y:auto;">Loading AI Analysis...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Init Lightweight Chart
+        const chartOptions = {
+            layout: { textColor: '#d1d4dc', background: { type: 'solid', color: '#131722' } },
+            grid: { vertLines: { color: '#2b3139' }, horzLines: { color: '#2b3139' } },
+            crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+            timeScale: { borderColor: '#2b3139' }
+        };
+        const chart = LightweightCharts.createChart(document.getElementById('chart-container'), chartOptions);
+        const candleSeries = chart.addCandlestickSeries({ upColor: '#089981', downColor: '#f23645', borderVisible: false, wickUpColor: '#089981', wickDownColor: '#f23645' });
+
+        let currentLines = [];
+
+        // Load Macro Cortex State
+        async function loadWorldView() {
+            try {
+                const res = await fetch('/api/world_view');
+                const data = await res.json();
+                const badge = document.getElementById('defcon-status');
+                badge.className = `defcon-badge defcon-${data.defcon}`;
+                badge.innerText = `DEFCON ${data.defcon}`;
+                document.getElementById('macro-just').innerText = data.justification;
+            } catch (e) { console.error("Failed to load Cortex view"); }
+        }
+
+        // Load Flight Recorder Logs
+        async function loadTrades() {
+            try {
+                const res = await fetch('/api/flight_recorder');
+                const trades = await res.json();
+                const container = document.getElementById('trade-log');
+
+                // Clear existing except header
+                Array.from(container.children).forEach(c => { if (c.tagName !== 'H3') c.remove() });
+
+                // Render latest first
+                trades.reverse().forEach(trade => {
+                    const card = document.createElement('div');
+                    card.className = `trade-card ${trade.action.toLowerCase()}`;
+                    card.innerHTML = `
+                        <div class="tc-header">
+                            <span>${trade.symbol}</span>
+                            <span style="color: ${trade.action === 'BUY' ? '#089981' : '#f23645'}">${trade.action}</span>
+                        </div>
+                        <div class="tc-details">
+                            Entry: ${trade.price}<br>
+                            Qty: ${trade.qty}<br>
+                            Conf: ${trade.confidence ? (trade.confidence * 100).toFixed(1) + '%' : 'N/A'}
+                        </div>
+                    `;
+                    card.onclick = () => loadChartData(trade.symbol, trade);
+                    container.appendChild(card);
+                });
+
+                // Load first chart by default if exists
+                if (trades.length > 0) loadChartData(trades[0].symbol, trades[0]);
+
+            } catch (e) {
+                console.error("Failed to load flight recorder", e);
+            }
+        }
+
+        // Load specific asset history and stamp trade lines
+        async function loadChartData(symbol, tradeData = null) {
+            try {
+                const res = await fetch(`/api/chart_data/${symbol}`);
+                const data = await res.json();
+
+                currentSymbol = symbol;
+                document.getElementById('asset-selector').value = symbol;
+
+                if (data.length > 0) {
+                    currentPrice = data[data.length - 1].close;
+                }
+
+                candleSeries.setData(data);
+
+                // Clear old lines
+                currentLines.forEach(line => candleSeries.removePriceLine(line));
+                currentLines = [];
+
+                // Draw new trade lines
+                if (tradeData) {
+                    const entryLine = candleSeries.createPriceLine({
+                        price: tradeData.price,
+                        color: '#2962FF',
+                        lineWidth: 2,
+                        lineStyle: LightweightCharts.LineStyle.Dotted,
+                        axisLabelVisible: true,
+                        title: `ENTRY (${tradeData.action})`,
+                    });
+                    currentLines.push(entryLine);
+
+                    // If trade has Target / Stop Loss data, draw them
+                    if (tradeData.target_price) {
+                        const tgtLine = candleSeries.createPriceLine({
+                            price: tradeData.target_price,
+                            color: '#089981', lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Solid, title: 'TARGET',
+                        });
+                        currentLines.push(tgtLine);
+                    }
+                    if (tradeData.stop_loss) {
+                        const slLine = candleSeries.createPriceLine({
+                            price: tradeData.stop_loss,
+                            color: '#f23645', lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Solid, title: 'STOP',
+                        });
+                        currentLines.push(slLine);
+                    }
+                }
+
+                chart.timeScale().fitContent();
+
+            } catch (e) { console.error("Failed to load chart data", e); }
+        }
+
+        let currentSymbol = "";
+        let currentPrice = 0;
+
+        async function loadWatchlist() {
+            try {
+                const res = await fetch('/api/watchlist');
+                const list = await res.json();
+                const sel = document.getElementById('asset-selector');
+                sel.innerHTML = '';
+                list.forEach(sym => {
+                    const opt = document.createElement('option');
+                    opt.value = sym;
+                    opt.innerText = sym;
+                    sel.appendChild(opt);
+                });
+
+                sel.addEventListener('change', (e) => {
+                    loadChartData(e.target.value);
+                });
+
+                if (list.length > 0 && !currentSymbol) {
+                    loadChartData(list[0]);
+                }
+            } catch (e) { console.error('Watchlist error', e); }
+        }
+
+        async function executeTrade(action) {
+            if (!currentSymbol || currentPrice === 0) return;
+            try {
+                const res = await fetch('/api/manual_trade', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        symbol: currentSymbol,
+                        action: action,
+                        price: currentPrice,
+                        qty: 1
+                    })
+                });
+                if (res.ok) {
+                    loadTrades();
+                }
+            } catch (e) { console.error("Trade failed", e); }
+        }
+
+        document.getElementById('btn-buy').onclick = () => executeTrade('BUY');
+        document.getElementById('btn-sell').onclick = () => executeTrade('SELL');
+
+        document.getElementById('btn-vision').onclick = async () => {
+            const vModal = document.getElementById('vision-modal');
+            const vContent = document.getElementById('vision-content');
+            vModal.style.display = 'block';
+            vContent.innerHTML = '<div style="text-align:center; padding:20px; color:#8a919e;">Analysing Pixels...<br><small>Sending to Gemini Flash 1.5</small></div>';
+
+            // Take screenshot of lightweight-charts
+            const canvas = chart.takeScreenshot();
+            const b64 = canvas.toDataURL('image/png');
+
+            try {
+                const res = await fetch('/api/vision_analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        image: b64,
+                        context: `Asset: ${currentSymbol} at Price: ${currentPrice}. Provide your Trade Buddy analysis based on the actual lines and candles visible.`
+                    })
+                });
+                const analysis = await res.json();
+
+                vContent.innerHTML = '';
+                analysis.forEach(item => {
+                    vContent.innerHTML += `
+                           <div class="vc-item">
+                                <div class="vc-label">${item.label}</div>
+                                <div class="vc-value">${item.value}</div>
+                           </div>
+                       `;
+                });
+            } catch (e) {
+                vContent.innerHTML = '<div style="color:#f23645;">Vision connection failed. Check backend.</div>';
+            }
+        };
+
+        // Init
+        loadWorldView();
+        loadWatchlist();
+        loadTrades();
+
+        // Auto-refresh Cortex View every 30s
+        setInterval(loadWorldView, 30000);
+
+        window.addEventListener('resize', () => {
+            chart.applyOptions({ width: document.querySelector('.main-chart').clientWidth, height: document.querySelector('.main-chart').clientHeight });
+        });
+    </script>
+</body>
+
+</html>

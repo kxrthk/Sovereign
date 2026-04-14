@@ -1,0 +1,233 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;700;800&display=swap');
+
+/* God-Level CSS Custom Properties for Futuristic Theming */
+:root {
+  --bg-base: #030305;
+  --bg-surface: #0A0A0F;
+  --bg-glass: rgba(10, 10, 15, 0.7);
+
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #475569;
+
+  --accent-cyan: #00F0FF;
+  --accent-purple: #B026FF;
+  --accent-green: #00FF66;
+  --accent-danger: #FF003C;
+  --accent-warning: #F59E0B;
+
+  --border-light: rgba(148, 163, 184, 0.15);
+  --border-glow-cyan: rgba(0, 240, 255, 0.4);
+  --border-glow-purple: rgba(176, 38, 255, 0.4);
+
+  --font-heading: 'Rajdhani', sans-serif;
+  --font-base: 'Outfit', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-base);
+  line-height: 1.5;
+  overflow: hidden;
+  /* Deep space radial gradient */
+  background-image: radial-gradient(circle at 15% 50%, rgba(0, 240, 255, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 85% 30%, rgba(176, 38, 255, 0.03) 0%, transparent 50%);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  letter-spacing: 1px;
+}
+
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Glassmorphism Utilities & Cyber Effects */
+.glass-panel {
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5), 0 4px 24px -1px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.hover-glow {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.hover-glow:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(0, 240, 255, 0.1);
+}
+
+.neon-text {
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.neon-cyan {
+  color: var(--accent-cyan);
+  text-shadow: 0 0 12px var(--accent-cyan);
+}
+
+.neon-purple {
+  color: var(--accent-purple);
+  text-shadow: 0 0 12px var(--accent-purple);
+}
+
+.neon-green {
+  color: var(--accent-green);
+  text-shadow: 0 0 12px var(--accent-green);
+}
+
+.highlight-cyan {
+  color: var(--accent-cyan);
+  font-weight: 800;
+}
+
+.highlight-purple {
+  color: var(--accent-purple);
+  font-weight: 800;
+}
+
+.highlight-green {
+  color: var(--accent-green);
+  font-weight: 800;
+}
+
+.glow-btn {
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.glow-btn::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, var(--accent-cyan), var(--accent-purple), var(--accent-green));
+  z-index: -1;
+  filter: blur(8px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.glow-btn:hover::before {
+  opacity: 0.6;
+}
+
+/* Animations */
+@keyframes pulseGlow {
+  0% {
+    opacity: 0.6;
+    filter: drop-shadow(0 0 4px currentColor);
+  }
+
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 12px currentColor);
+  }
+
+  100% {
+    opacity: 0.6;
+    filter: drop-shadow(0 0 4px currentColor);
+  }
+}
+
+.glow-pulse {
+  animation: pulseGlow 2.5s infinite;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.18);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 240, 255, 0.5);
+}
+
+/* 3D Vision Scanner Animation */
+@keyframes scanner3D {
+  0% {
+    transform: translateY(-100%) perspective(1000px) rotateX(45deg);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 0.8;
+  }
+
+  80% {
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: translateY(200%) perspective(1000px) rotateX(45deg);
+    opacity: 0;
+  }
+}
+
+.scanner-overlay-3d {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  /* sweeps across */
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(0, 240, 255, 0.0), rgba(0, 240, 255, 0.2) 90%, var(--accent-cyan));
+  border-bottom: 2px solid var(--accent-cyan);
+  box-shadow: 0 10px 40px rgba(0, 240, 255, 0.6);
+  animation: scanner3D 2.5s ease-in-out infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Remove default browser arrows from number inputs for clean UI */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}

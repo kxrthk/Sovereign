@@ -1,0 +1,40 @@
+@echo off
+title SOVEREIGN AUTO-INSTALLER
+color 0A
+
+echo ==================================================
+echo      SETTING UP SOVEREIGN ENVIRONMENT
+echo ==================================================
+
+:: 1. CHECK FOR PYTHON
+python --version >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [CRITICAL] Python is not installed!
+    echo Please install Python from python.org and tick "Add to PATH".
+    pause
+    exit
+)
+
+:: 2. AUTO-INSTALL LIBRARIES (The Fix)
+if not exist "installed.flag" (
+    echo [SETUP] First run detected. Installing Brain Modules...
+    echo This might take a few minutes...
+    pip install flask flask-cors yfinance pandas pandas_ta schedule colorama requests
+    echo. > installed.flag
+    echo [SUCCESS] Modules Installed.
+)
+
+:: 3. LAUNCH SYSTEM
+echo [1/3] Starting Backend...
+start "Backend" /min cmd /k "python dashboard_server.py"
+
+echo [2/3] Starting Auto-Pilot...
+start "Brain" /min cmd /k "python auto_trader.py"
+
+echo [3/3] Waiting for sync...
+timeout /t 5 >nul
+
+echo [GO] Opening Dashboard...
+start http://localhost:5000
+
+exit

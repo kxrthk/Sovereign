@@ -1,0 +1,295 @@
+{
+  "CORE SECTOR": [
+    {
+      "symbol": "RELIANCE.NS",
+      "label": "RELIANCE INDUSTRIES"
+    },
+    {
+      "symbol": "HDFCBANK.NS",
+      "label": "HDFC BANK"
+    },
+    {
+      "symbol": "TCS.NS",
+      "label": "TATA CONSULTANCY"
+    },
+    {
+      "symbol": "INFY.NS",
+      "label": "INFOSYS"
+    },
+    {
+      "symbol": "ICICIBANK.NS",
+      "label": "ICICI BANK"
+    },
+    {
+      "symbol": "ITC.NS",
+      "label": "ITC"
+    },
+    {
+      "symbol": "BHARTIARTL.NS",
+      "label": "BHARTI AIRTEL"
+    },
+    {
+      "symbol": "ADANIENT.NS",
+      "label": "ADANI ENTERPRISES"
+    }
+  ],
+  "BANKING & FINANCE": [
+    {
+      "symbol": "SBIN.NS",
+      "label": "STATE BANK OF INDIA"
+    },
+    {
+      "symbol": "AXISBANK.NS",
+      "label": "AXIS BANK"
+    },
+    {
+      "symbol": "KOTAKBANK.NS",
+      "label": "KOTAK MAHINDRA"
+    },
+    {
+      "symbol": "BAJFINANCE.NS",
+      "label": "BAJAJ FINANCE"
+    },
+    {
+      "symbol": "HDFCLIFE.NS",
+      "label": "HDFC LIFE"
+    },
+    {
+      "symbol": "BAJAJFINSV.NS",
+      "label": "BAJAJ FINSERV"
+    }
+  ],
+  "PHARMA & HEALTH": [
+    {
+      "symbol": "SUNPHARMA.NS",
+      "label": "SUN PHARMA"
+    },
+    {
+      "symbol": "DRREDDY.NS",
+      "label": "DR REDDYS"
+    },
+    {
+      "symbol": "CIPLA.NS",
+      "label": "CIPLA"
+    },
+    {
+      "symbol": "DIVISLAB.NS",
+      "label": "DIVIS LAB"
+    }
+  ],
+  "ENERGY": [
+    {
+      "symbol": "ONGC.NS",
+      "label": "ONGC"
+    },
+    {
+      "symbol": "POWERGRID.NS",
+      "label": "POWER GRID"
+    },
+    {
+      "symbol": "NTPC.NS",
+      "label": "NTPC"
+    },
+    {
+      "symbol": "BPCL.NS",
+      "label": "BHARAT PETROLEUM"
+    },
+    {
+      "symbol": "COALINDIA.NS",
+      "label": "COAL INDIA"
+    }
+  ],
+  "RAW MATERIALS": [
+    {
+      "symbol": "TATASTEEL.NS",
+      "label": "TATA STEEL"
+    },
+    {
+      "symbol": "HINDALCO.NS",
+      "label": "HINDALCO"
+    },
+    {
+      "symbol": "JSWSTEEL.NS",
+      "label": "JSW STEEL"
+    },
+    {
+      "symbol": "ULTRACEMCO.NS",
+      "label": "ULTRATECH CEMENT"
+    }
+  ],
+  "AUTO": [
+    {
+      "symbol": "MARUTI.NS",
+      "label": "MARUTI SUZUKI"
+    },
+    {
+      "symbol": "HEROMOTOCO.NS",
+      "label": "HERO MOTOCORP"
+    },
+    {
+      "symbol": "BAJAJ-AUTO.NS",
+      "label": "BAJAJ AUTO"
+    },
+    {
+      "symbol": "EICHERMOT.NS",
+      "label": "EICHER MOTORS"
+    },
+    {
+      "symbol": "M&M.NS",
+      "label": "MAHINDRA & MAHINDRA"
+    },
+    {
+      "symbol": "HEROMOTOCO.NS",
+      "label": "HERO MOTOCORP"
+    }
+  ],
+  "FMCG & CONSUMER": [
+    {
+      "symbol": "HINDUNILVR.NS",
+      "label": "HINDUSTAN UNILEVER"
+    },
+    {
+      "symbol": "BRITANNIA.NS",
+      "label": "BRITANNIA"
+    },
+    {
+      "symbol": "NESTLEIND.NS",
+      "label": "NESTLE INDIA"
+    },
+    {
+      "symbol": "TATACONSUM.NS",
+      "label": "TATA CONSUMER"
+    },
+    {
+      "symbol": "ASIANPAINT.NS",
+      "label": "ASIAN PAINTS"
+    },
+    {
+      "symbol": "TITAN.NS",
+      "label": "TITAN COMPANY"
+    }
+  ],
+  "NEW AGE TECH": [
+    {
+      "symbol": "SIEMENS.NS",
+      "label": "SIEMENS"
+    },
+    {
+      "symbol": "PAYTM.NS",
+      "label": "PAYTM"
+    }
+  ],
+  "IT & TECH": [
+    {
+      "symbol": "HCLTECH.NS",
+      "label": "HCL TECHNOLOGIES"
+    },
+    {
+      "symbol": "WIPRO.NS",
+      "label": "WIPRO"
+    },
+    {
+      "symbol": "TECHM.NS",
+      "label": "TECH MAHINDRA"
+    },
+    {
+      "symbol": "MPHASIS.NS",
+      "label": "MPHASIS"
+    },
+    {
+      "symbol": "WIPRO.NS",
+      "label": "WIPRO"
+    }
+  ],
+  "CONSTRUCTION & ENGINEERING": [
+    {
+      "symbol": "LT.NS",
+      "label": "LARSEN & TOUBRO"
+    },
+    {
+      "symbol": "KEC.NS",
+      "label": "KEC INTERNATIONAL"
+    },
+    {
+      "symbol": "AHLUCONT.NS",
+      "label": "AHLUWALIA CONTRACTS"
+    },
+    {
+      "symbol": "PNC.NS",
+      "label": "PNC INFRATECH"
+    },
+    {
+      "symbol": "NBCC.NS",
+      "label": "NBCC INDIA"
+    }
+  ],
+  "TEXTILES": [
+    {
+      "symbol": "PAGEIND.NS",
+      "label": "PAGE INDUSTRIES"
+    },
+    {
+      "symbol": "RAYMOND.NS",
+      "label": "RAYMOND"
+    },
+    {
+      "symbol": "ARVIND.NS",
+      "label": "ARVIND"
+    },
+    {
+      "symbol": "TRIDENT.NS",
+      "label": "TRIDENT"
+    }
+  ],
+  "SHIPPING": [
+    {
+      "symbol": "MAZDOCK.NS",
+      "label": "MAZAGON DOCK"
+    },
+    {
+      "symbol": "ADANIPORTS.NS",
+      "label": "ADANI PORTS"
+    },
+    {
+      "symbol": "COCHINSHIP.NS",
+      "label": "COCHIN SHIPYARD"
+    },
+    {
+      "symbol": "GESHIP.NS",
+      "label": "GREAT EASTERN SHIPPING"
+    }
+  ],
+  "DEFENCE": [
+    {
+      "symbol": "HAL.NS",
+      "label": "HINDUSTAN AERONAUTICS"
+    },
+    {
+      "symbol": "BEL.NS",
+      "label": "BHARAT ELECTRONICS"
+    },
+    {
+      "symbol": "BEML.NS",
+      "label": "BEML"
+    },
+    {
+      "symbol": "BDL.NS",
+      "label": "BHARAT DYNAMICS"
+    }
+  ],
+  "AI_DISCOVERED": [],
+  "POWER": [
+    {
+      "symbol": "NLCINDIA.NS",
+      "label": "NLC INDIA",
+      "full_name": "NLC India Limited"
+    }
+  ],
+  "ENGINEERING": [
+    {
+      "symbol": "ENGINERSIN.NS",
+      "label": "ENGINEERS INDIA",
+      "full_name": "Engineers India Limited"
+    }
+  ]
+}
