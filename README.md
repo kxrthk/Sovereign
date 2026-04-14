@@ -6,11 +6,11 @@ Sovereign is a powerful AI financial assistant that seamlessly fuses high-speed 
 
 ---
 
-## ⚡ Core Philosophy
+## Core Philosophy
 
 The vision of Sovereign is simple: **True Intelligence requires complete privacy and sovereignty.** API-dependent AI architectures leak trade secrets, suffer from rate-limits, and have opaque data practices. Sovereign executes its reasoning, RAG context handling, strategy alignment, and trading entirely on your local metal.
 
-## 🛠 Features
+## Features
 
 - **100% Local Inference Engine (`sovereign_brain.py`)** 
   - Drives all analytical systems completely offline using Ollama and high-efficiency models like Microsoft's *Phi-3.5*.
@@ -34,7 +34,7 @@ The vision of Sovereign is simple: **True Intelligence requires complete privacy
 - **Sensationalism & Satire Filters (`news_agent.py`)**
   - Evaluates live financial RSS feeds, filtering out satirical noise (meme news) and downgrading clickbait sensationalism in actual fundamental analysis. 
 
-## 🚀 Setup & Execution
+## Setup & Execution
 
 Everything is bundled into a one-step automated initialization logic natively for Windows.
 
@@ -50,11 +50,11 @@ Everything is bundled into a one-step automated initialization logic natively fo
 
 *The bootscript will natively sequence parallel execution layers: waking Ollama, spooling the RAG embeddings, launching the backend ASGI stack, and hooking into the React Electron dashboard in real-time.*
 
-## 🔒 Security & Safe Modes
+## Security & Safe Modes
 
 Sovereign features a multi-tiered architecture with hard-fails:
 - Built-in **DEFCON scaling** (SAFE / CAUTION / DANGER).
 - Aggressive API sandboxing — all primary reasoning logic utilizes Local models. Cloud-services run purely as "frozen backups" accessible only using explicit `.env` overriding (`AI_MODE="CLOUD"`).
 
-## 💡 About
+## About
 Built by [kxrthk](https://github.com/kxrthk). Driven by local intelligence, optimized for quantitative mastery.
