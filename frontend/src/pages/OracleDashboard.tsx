@@ -207,7 +207,7 @@ export default function OracleDashboard() {
                             <ResponsiveContainer width="100%" height="100%">
                                 <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
                                     <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                                    <PolarAngleAxis dataKey="factor" tick={{ fill: 'var(--text-muted)', fontSize: 9 }} />
+                                    <PolarAngleAxis dataKey="factor" tick={{ fill: '#FFFFFF', fontSize: 12, fontWeight: 700, fontFamily: "'Rajdhani', sans-serif" }} />
                                     <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                                     <Radar name={selectedData.symbol} dataKey="value" stroke="var(--accent-purple)" fill="var(--accent-purple)" fillOpacity={0.3} />
                                 </RadarChart>
