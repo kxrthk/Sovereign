@@ -52,92 +52,186 @@ function getCategoryTheme(name: string) {
 }
 
 
-// ─── Lightweight chart data fetches exclusively over HTTP (fast, no WS delay) ──
-const chartCache: Record<string, any[]> = {};
+// ─── Chart data layer: 30s TTL cache + WebSocket live ticks ─────────────────
+const chartCache: Record<string, { data: any[]; ts: number }> = {};
+const CACHE_TTL_MS = 30_000; // 30 seconds
 
 async function fetchChartData(ticker: string): Promise<any[]> {
-    if (chartCache[ticker]) return chartCache[ticker]; // Instant from memory cache
+    const cached = chartCache[ticker];
+    if (cached && Date.now() - cached.ts < CACHE_TTL_MS) return cached.data;
+
     try {
-        const res = await axios.get(`/api/chart_data/${encodeURIComponent(ticker)}`, { timeout: 8000 });
+        const res = await axios.get(`/api/chart_data/${encodeURIComponent(ticker)}`, { timeout: 10000 });
         const data = (res.data || [])
             .map((d: any) => ({
-                time: d.time as string,
+                time: d.time as number,
                 open: d.open,
                 high: d.high,
                 low: d.low,
                 close: d.close,
             }))
-            .sort((a: any, b: any) => (a.time > b.time ? 1 : -1));
-        chartCache[ticker] = data;
+            .sort((a: any, b: any) => a.time - b.time);
+        chartCache[ticker] = { data, ts: Date.now() };
         return data;
     } catch {
-        return [];
+        return chartCache[ticker]?.data || [];
     }
 }
 
-// ─── Single chart component ──────────────────────────────────────────────────
+// ─── WebSocket URL helper ────────────────────────────────────────────────────
+function getWsUrl(ticker: string): string {
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${proto}//${window.location.host}/ws/live_feed/${encodeURIComponent(ticker)}`;
+}
+
+// ─── Single chart component with LIVE WebSocket updates ─────────────────────
 function MiniChart({ ticker, label }: { ticker: string; label: string; color: string }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<any>(null);
+    const wsRef = useRef<WebSocket | null>(null);
     const [loading, setLoading] = useState(true);
+    const [livePrice, setLivePrice] = useState<number | null>(null);
+    const [prevClose, setPrevClose] = useState<number | null>(null);
 
     useEffect(() => {
         if (!containerRef.current) return;
 
+        const isHellenic = document.documentElement.classList.contains('theme-greek');
+        const textColor = isHellenic ? '#2B2520' : 'rgba(255,255,255,0.85)';
+        const gridColor = isHellenic ? 'rgba(99, 90, 79, 0.15)' : 'rgba(255,255,255,0.04)';
+        const borderColor = isHellenic ? 'rgba(99, 90, 79, 0.2)' : 'rgba(255,255,255,0.12)';
+        const crosshairColor = isHellenic ? 'rgba(178,82,51,0.5)' : 'rgba(0,240,255,0.4)';
+        const crosshairBg = isHellenic ? '#B25233' : '#00F0FF';
+
         const chart = createChart(containerRef.current, {
             autoSize: true,
-            layout: { background: { type: ColorType.Solid, color: 'transparent' }, textColor: 'rgba(255,255,255,0.85)' },
-            grid: { vertLines: { color: 'rgba(255,255,255,0.04)' }, horzLines: { color: 'rgba(255,255,255,0.04)' } },
+            layout: { background: { type: ColorType.Solid, color: 'transparent' }, textColor },
+            grid: { vertLines: { color: gridColor }, horzLines: { color: gridColor } },
             rightPriceScale: {
-                borderColor: 'rgba(255,255,255,0.12)',
+                borderColor: borderColor,
                 visible: true,
                 minimumWidth: 80,
             },
-            timeScale: { borderColor: 'rgba(255,255,255,0.08)', timeVisible: true },
+            timeScale: { borderColor: borderColor, timeVisible: true, secondsVisible: false },
             crosshair: {
-                vertLine: { color: 'rgba(0,240,255,0.4)', labelBackgroundColor: '#00F0FF' },
-                horzLine: { color: 'rgba(0,240,255,0.4)', labelBackgroundColor: '#00F0FF' },
+                vertLine: { color: crosshairColor, labelBackgroundColor: crosshairBg },
+                horzLine: { color: crosshairColor, labelBackgroundColor: crosshairBg },
             },
         });
 
+        const candleUp = isHellenic ? '#4A6B44' : '#00FF66';
+        const candleDown = isHellenic ? '#8A3333' : '#FF003C';
         const series = chart.addSeries(CandlestickSeries, {
-            upColor: '#00FF66', downColor: '#FF003C',
-            borderVisible: false, wickUpColor: '#00FF66', wickDownColor: '#FF003C',
+            upColor: candleUp, downColor: candleDown,
+            borderVisible: false, wickUpColor: candleUp, wickDownColor: candleDown,
         });
 
         chartRef.current = chart;
         seriesRef.current = series;
 
-        const handleResize = () => {
-            // autoSize handles resize automatically — just trigger a fitContent on resize
-            chart.timeScale().fitContent();
-        };
-        window.addEventListener('resize', handleResize);
-
-        // Fetch data immediately
+        // ── Load initial historical data via HTTP ────────────────────────────
         fetchChartData(ticker).then((data) => {
             if (data.length > 0) {
                 series.setData(data);
                 chart.timeScale().fitContent();
+                const lastCandle = data[data.length - 1];
+                setLivePrice(lastCandle.close);
+                // Find previous day's close for change% calc
+                const now = lastCandle.time;
+                const oneDayAgo = now - 86400;
+                const prevDayCandle = [...data].reverse().find(c => c.time <= oneDayAgo);
+                if (prevDayCandle) setPrevClose(prevDayCandle.close);
             }
             setLoading(false);
         });
 
+        // ── Connect to WebSocket for live tick updates ───────────────────────
+        let reconnectTimer: ReturnType<typeof setTimeout>;
+        function connectWs() {
+            try {
+                const ws = new WebSocket(getWsUrl(ticker));
+                wsRef.current = ws;
+
+                ws.onmessage = (event) => {
+                    try {
+                        const msg = JSON.parse(event.data);
+                        if (msg.type === 'history' && Array.isArray(msg.data)) {
+                            // Full history push from backend on connect
+                            const sorted = msg.data.sort((a: any, b: any) => a.time - b.time);
+                            series.setData(sorted);
+                            chart.timeScale().fitContent();
+                            if (sorted.length > 0) {
+                                setLivePrice(sorted[sorted.length - 1].close);
+                            }
+                        } else if (msg.type === 'tick' && msg.data) {
+                            // Live candle update
+                            series.update(msg.data);
+                            setLivePrice(msg.data.close);
+                        }
+                    } catch { /* ignore malformed frames */ }
+                };
+
+                ws.onclose = () => {
+                    // Auto-reconnect after 3s
+                    reconnectTimer = setTimeout(connectWs, 3000);
+                };
+
+                ws.onerror = () => ws.close();
+            } catch { /* WebSocket unavailable — rely on polling */ }
+        }
+        connectWs();
+
+        // ── Polling fallback: refresh chart data every 30s ───────────────────
+        const pollTimer = setInterval(() => {
+            fetchChartData(ticker).then((data) => {
+                if (data.length > 0 && seriesRef.current) {
+                    seriesRef.current.setData(data);
+                    setLivePrice(data[data.length - 1].close);
+                }
+            });
+        }, 30_000);
+
+        // ── Resize handler ───────────────────────────────────────────────────
+        const handleResize = () => chart.timeScale().fitContent();
+        window.addEventListener('resize', handleResize);
+
         return () => {
             window.removeEventListener('resize', handleResize);
+            clearInterval(pollTimer);
+            clearTimeout(reconnectTimer);
+            if (wsRef.current) { try { wsRef.current.close(); } catch {} }
             chart.remove();
         };
     }, [ticker]);
 
+    // Live price change %
+    const changePct = (livePrice && prevClose) ? ((livePrice - prevClose) / prevClose * 100) : null;
+    const isUp = changePct !== null && changePct >= 0;
+
     return (
         <div className="glass-panel" style={{ padding: '0', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            {/* Chart header */}
+            {/* Chart header with live price */}
             <div style={{ padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)' }}>
                 <div>
-                    <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>{label}</div>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)' }}>{label}</div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{ticker}</div>
                 </div>
+                {livePrice !== null && (
+                    <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+                            ₹{livePrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        {changePct !== null && (
+                            <div style={{
+                                fontSize: '11px', fontWeight: 700, fontFamily: 'var(--font-mono)',
+                                color: isUp ? 'var(--accent-green)' : 'var(--accent-danger)',
+                            }}>
+                                {isUp ? '▲' : '▼'} {Math.abs(changePct).toFixed(2)}%
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
             {/* Chart area */}
             <div style={{ flex: 1, position: 'relative' }}>
@@ -221,7 +315,7 @@ export default function Technicals() {
                     <button
                         onClick={() => setSingleMode(!singleMode)}
                         title={singleMode ? "Grid view" : "Single view"}
-                        style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid var(--border-light)', color: 'var(--text-muted)', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                        style={{ background: 'var(--sub-panel-bg)', border: '1px solid var(--border-light)', color: 'var(--text-muted)', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                     >
                         {singleMode ? <Grid size={14} /> : <Maximize2 size={14} />}
                     </button>
@@ -241,7 +335,7 @@ export default function Technicals() {
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
                                 placeholder="Search asset (e.g. BTC-USD)"
-                                style={{ flex: 1, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '11px', padding: '8px 10px', borderRadius: '4px', outline: 'none', fontFamily: 'var(--font-mono)' }}
+                                style={{ flex: 1, background: 'var(--sub-panel-bg)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-primary)', fontSize: '11px', padding: '8px 10px', borderRadius: '4px', outline: 'none', fontFamily: 'var(--font-mono)' }}
                             />
                         </form>
                     </div>
@@ -256,7 +350,7 @@ export default function Technicals() {
                                     style={{
                                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                                         padding: '12px 16px', cursor: 'pointer', transition: 'background 0.2s',
-                                        background: isExpanded ? 'rgba(0,0,0,0.2)' : 'transparent'
+                                        background: isExpanded ? 'var(--sub-panel-bg)' : 'transparent'
                                     }}
                                 >
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: category.color, fontSize: '11px', fontWeight: 800, letterSpacing: '1.5px' }}>
@@ -276,9 +370,9 @@ export default function Technicals() {
                                                     onClick={() => togglePin(t.symbol, t.label, category.color)}
                                                     title={pinned ? 'Unpin chart' : `${t.full_name || t.label}\nPrimary Market: ${category.name}`}
                                                     style={{
-                                                        background: pinned ? `${category.color}18` : 'rgba(0,0,0,0.4)',
+                                                        background: pinned ? `${category.color}18` : 'var(--sub-panel-bg)',
                                                         border: pinned ? `1px solid ${category.color}` : '1px solid rgba(255,255,255,0.05)',
-                                                        color: pinned ? '#fff' : 'var(--text-secondary)',
+                                                        color: pinned ? 'var(--text-primary)' : 'var(--text-secondary)',
                                                         padding: '8px 12px',
                                                         borderRadius: '6px',
                                                         cursor: 'pointer',

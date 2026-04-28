@@ -17,7 +17,7 @@ class QuantEngine:
             if not symbol.endswith('.NS') and not symbol.endswith('.BO'):
                 symbol += '.NS'
 
-            df = yf.download(symbol, period=period, interval=interval, progress=False, show_errors=False)
+            df = yf.download(symbol, period=period, interval=interval, progress=False)
             if df.empty:
                 return [{"label": "ERROR", "value": f"No Market Data found for {symbol}"}]
                 
@@ -107,13 +107,52 @@ class QuantEngine:
                 target = upper_bb
                 stop = fib_618
             
+            # -------------------------------
+            # 6. Trade Timing Recommendation
+            # -------------------------------
+            timing = "Hold and monitor"
+            urgency = "LOW"
+            timing_reason = "No clear edge detected at current levels."
+
+            if rsi < 30 and macd_val > macd_sig:
+                timing = "Enter within 1-3 days"
+                urgency = "HIGH"
+                timing_reason = "RSI deeply oversold with MACD bullish crossover — strong bounce setup forming."
+            elif rsi < 35 and close_price <= lower_bb:
+                timing = "Enter within 3-5 days"
+                urgency = "HIGH"
+                timing_reason = "Price at lower Bollinger Band with oversold RSI — mean reversion imminent."
+            elif macd_val > macd_sig and close_price > mid_bb and rsi < 60:
+                timing = "Enter within 1 week"
+                urgency = "MEDIUM"
+                timing_reason = "Momentum accelerating above VWAP with healthy RSI — trend continuation likely."
+            elif rsi > 70 and close_price >= upper_bb:
+                timing = "Wait 2-4 weeks"
+                urgency = "LOW"
+                timing_reason = "Overextended at upper Bollinger Band — wait for pullback to Fib 0.382-0.5 zone."
+            elif rsi > 60 and macd_val < macd_sig:
+                timing = "Wait 1-2 weeks"
+                urgency = "LOW"
+                timing_reason = "MACD bearish divergence developing — momentum fading, better entry ahead."
+            elif macd_val < macd_sig and close_price < mid_bb:
+                timing = "Wait 1 month"
+                urgency = "LOW"
+                timing_reason = "Strong downtrend with bearish MACD — wait for stabilization before entry."
+            elif abs(rsi - 50) < 10 and abs(macd_val - macd_sig) < 0.5:
+                timing = "Wait 1-2 weeks"
+                urgency = "MEDIUM"
+                timing_reason = "Consolidation phase — no directional edge. Wait for breakout signal."
+
             return [
                 {"label": "Analyzed Asset", "value": f"{symbol.upper()} @ INR {float(close_price):.2f}"},
                 {"label": "Play Style", "value": setup_type},
                 {"label": "Current Vibe", "value": f"{vibe} | RSI: {rsi:.1f}"},
                 {"label": "Fibonacci Box (0.5 - 0.618)", "value": f"INR {fib_618:.2f} - INR {fib_500:.2f}"},
                 {"label": "Volatility Bounds", "value": f"Floor: INR {lower_bb:.2f} | Ceiling: INR {upper_bb:.2f}"},
-                {"label": "Mathematical Output", "value": advice}
+                {"label": "Mathematical Output", "value": advice},
+                {"label": "TIMING", "value": timing},
+                {"label": "TIMING_URGENCY", "value": urgency},
+                {"label": "TIMING_REASON", "value": timing_reason}
             ]
             
         except Exception as e:

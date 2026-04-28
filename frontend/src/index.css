@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;700;800&family=Cinzel:wght@400;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap');
 
 /* God-Level CSS Custom Properties for Futuristic Theming */
 :root {
@@ -23,6 +23,9 @@
   --font-heading: 'Rajdhani', sans-serif;
   --font-base: 'Outfit', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+
+  --sub-panel-bg: rgba(0, 0, 0, 0.3);
+  --sub-panel-border: rgba(255, 255, 255, 0.05);
 }
 
 * {
@@ -214,12 +217,168 @@ h6 {
 }
 
 @keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ARTISTIC LAYER 1: Animated gradient border on glass panels
+   ═══════════════════════════════════════════════════════════════ */
+@property --border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes borderRotate {
+  to { --border-angle: 360deg; }
+}
+
+.glass-panel {
+  transition: border-color 0.4s ease, box-shadow 0.4s ease, transform 0.3s ease;
+}
+
+.glass-panel:hover {
+  border-color: rgba(0, 240, 255, 0.2);
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.5),
+    0 0 30px rgba(0, 240, 255, 0.06),
+    0 8px 32px -8px rgba(0, 0, 0, 0.5);
+  transform: translateY(-1px);
+}
+
+/* Cyan corner accent — top-left shimmer on hover */
+.glass-panel::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 60px;
+  height: 60px;
+  background: radial-gradient(circle at top left, rgba(0, 240, 255, 0.08), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  border-radius: 12px 0 0 0;
+}
+.glass-panel:hover::after {
+  opacity: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ARTISTIC LAYER 2: CRT Scanline Overlay (ultra-subtle)
+   ═══════════════════════════════════════════════════════════════ */
+.crt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.02) 0px,
+    rgba(0, 0, 0, 0.02) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: multiply;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ARTISTIC LAYER 3: Sidebar Active Item Breathing Glow
+   ═══════════════════════════════════════════════════════════════ */
+@keyframes sidebarBreath {
+  0%, 100% {
+    box-shadow: inset 0 0 12px rgba(0, 240, 255, 0.05), 0 0 8px rgba(0, 240, 255, 0.03);
+  }
+  50% {
+    box-shadow: inset 0 0 20px rgba(0, 240, 255, 0.12), 0 0 16px rgba(0, 240, 255, 0.08);
+  }
+}
+
+.sidebar a[aria-current="page"],
+.sidebar a.active {
+  animation: sidebarBreath 3s ease-in-out infinite !important;
+}
+
+/* Sidebar nav hover micro-animation */
+.sidebar a {
+  position: relative;
+}
+.sidebar a:hover {
+  background: rgba(0, 240, 255, 0.04) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ARTISTIC LAYER 4: Ambient Vignette & Depth
+   ═══════════════════════════════════════════════════════════════ */
+.ambient-vignette {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse at 10% 20%, rgba(0, 240, 255, 0.025) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 80%, rgba(176, 38, 255, 0.02) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.4) 100%);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ARTISTIC LAYER 5: Smooth page content transitions
+   ═══════════════════════════════════════════════════════════════ */
+@keyframes pageSlideIn {
   from {
-    transform: rotate(0deg);
+    opacity: 0;
+    transform: translateY(8px);
   }
   to {
-    transform: rotate(360deg);
+    opacity: 1;
+    transform: translateY(0);
   }
+}
+
+main > * {
+  animation: pageSlideIn 0.35s ease-out;
+}
+
+/* Refined button hover states */
+button {
+  transition: all 0.25s ease !important;
+}
+button:hover {
+  transform: translateY(-1px);
+}
+button:active {
+  transform: translateY(0px) scale(0.98);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ARTISTIC LAYER 6: Text selection & focus ring branding
+   ═══════════════════════════════════════════════════════════════ */
+::selection {
+  background: rgba(0, 240, 255, 0.25);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid rgba(0, 240, 255, 0.4);
+  outline-offset: 2px;
 }
 
 /* Remove default browser arrows from number inputs for clean UI */
@@ -230,4 +389,99 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 input[type="number"] {
   -moz-appearance: textfield;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   THEME: HELLENIC (OLD GREEK) LIGHT MODE 
+   ═══════════════════════════════════════════════════════════════ */
+.theme-greek {
+  --bg-base: #F0E6D2;
+  --bg-surface: #E6D7BD;
+  --bg-glass: rgba(230, 215, 189, 0.85);
+
+  --text-primary: #1F1A17;
+  --text-secondary: #5C5146;
+  --text-muted: #827364;
+
+  --accent-cyan: #B25233;   /* Terracotta */
+  --accent-purple: #B58B43; /* Antique Gold */
+  --accent-green: #4A6B44;  /* Olive Green */
+  --accent-danger: #8A3333; /* Crimson */
+  --accent-warning: #B8860B; /* Bronze */
+
+  --border-light: rgba(99, 90, 79, 0.2);
+  --border-glow-cyan: rgba(178, 82, 51, 0.25);
+  --border-glow-purple: rgba(181, 139, 67, 0.25);
+
+  --font-heading: 'Cinzel', serif;
+  --font-base: 'Lora', serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --sub-panel-bg: rgba(99, 90, 79, 0.05);
+  --sub-panel-border: rgba(99, 90, 79, 0.15);
+}
+
+/* Hellenic Specific Overrides */
+.theme-greek body {
+  background-image: none;
+  background-color: var(--bg-base);
+}
+
+.theme-greek .glass-panel {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  border-radius: 4px; /* Structured, pillar-like straight edges */
+  border-color: rgba(99, 90, 79, 0.15);
+  background: var(--bg-surface);
+  backdrop-filter: none;
+}
+
+.theme-greek .glass-panel:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08); /* Soft organic shadow on hover */
+  transform: translateY(-2px);
+  border-color: var(--border-light);
+}
+
+/* Disable corner shimmers on greek panels */
+.theme-greek .glass-panel::after {
+  display: none !important;
+}
+
+/* Alter text shadows and glows into firm architectural shapes */
+.theme-greek .neon-cyan, 
+.theme-greek .neon-purple, 
+.theme-greek .neon-green {
+  text-shadow: none;
+  font-weight: 700;
+}
+
+.theme-greek .hover-glow:hover {
+  box-shadow: 0 6px 16px rgba(178, 82, 51, 0.15) !important;
+  border-color: rgba(178, 82, 51, 0.4) !important;
+}
+
+/* Solid gradients instead of neon bleeds */
+.theme-greek .glow-btn::before {
+  background: linear-gradient(45deg, #E6D7BD, #B58B43);
+  filter: blur(4px);
+}
+
+.theme-greek .scanner-overlay-3d {
+  background: linear-gradient(to bottom, rgba(178, 82, 51, 0.0), rgba(178, 82, 51, 0.05) 90%, var(--accent-cyan));
+  border-bottom: 2px solid var(--accent-cyan);
+  box-shadow: 0 10px 40px rgba(178, 82, 51, 0.2);
+}
+
+/* Remove CRT lines & change vignette */
+.theme-greek .crt-overlay {
+  display: none !important;
+}
+.theme-greek .ambient-vignette {
+  background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(43, 37, 32, 0.15) 100%);
+}
+
+.theme-greek .sidebar a[aria-current="page"],
+.theme-greek .sidebar a.active {
+  animation: none !important;
+  background: rgba(178, 82, 51, 0.08) !important;
+  border-left: 3px solid var(--accent-cyan);
 }

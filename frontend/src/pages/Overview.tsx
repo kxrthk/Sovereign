@@ -12,6 +12,8 @@ export default function Overview() {
     const [newsIndex, setNewsIndex] = useState(0);
     const NEWS_PER_PAGE = 3;
     const [oracleScan, setOracleScan] = useState<any[]>([]);
+    const [realizedPnl, setRealizedPnl] = useState(0);
+    const [realizedHistory, setRealizedHistory] = useState<{ name: string; pnl: number }[]>([]);
 
     useEffect(() => {
         const fetchStatus = async () => {
@@ -51,21 +53,47 @@ export default function Overview() {
             } catch (e) { console.error('Oracle fetch error', e); }
         };
 
+        const fetchPnL = async () => {
+            try {
+                const res = await axios.get('/api/flight_recorder');
+                const allTrades = res.data || [];
+
+                // Filter to AI-only trades (exclude manual pilot mode trades)
+                const aiTrades = allTrades.filter((t: any) => t.source !== 'manual');
+
+                // Use backend-computed pnl directly for accuracy
+                let cumPnl = 0;
+                const history: { name: string; pnl: number }[] = [{ name: 'Start', pnl: 0 }];
+                aiTrades.forEach((t: any) => {
+                    if (t.action === 'SELL' && t.pnl != null) {
+                        cumPnl += t.pnl;
+                        const label = t.timestamp?.split(',')[0] || `T${history.length}`;
+                        history.push({ name: label, pnl: Math.round(cumPnl * 10) / 10 });
+                    }
+                });
+
+                setRealizedPnl(Math.round(cumPnl * 10) / 10);
+                setRealizedHistory(history);
+            } catch (e) { console.error('P&L fetch error', e); }
+        };
+
         fetchStatus();
         fetchIntel();
         fetchTrades();
         fetchPerformance();
         fetchNews();
         fetchOracleScan();
+        fetchPnL();
 
         const inv1 = setInterval(fetchStatus, 5000);
         const inv2 = setInterval(fetchIntel, 60000);
         const inv3 = setInterval(fetchTrades, 5000);
-        const inv4 = setInterval(fetchNews, 300000); // refresh news every 5 min
+        const inv4 = setInterval(fetchNews, 300000);
         const inv5 = setInterval(fetchPerformance, 5000);
-        const inv6 = setInterval(fetchOracleScan, 30000); // 30s oracle pulse
+        const inv6 = setInterval(fetchOracleScan, 30000);
+        const inv7 = setInterval(fetchPnL, 5000);
 
-        return () => { clearInterval(inv1); clearInterval(inv2); clearInterval(inv3); clearInterval(inv4); clearInterval(inv5); clearInterval(inv6); };
+        return () => { clearInterval(inv1); clearInterval(inv2); clearInterval(inv3); clearInterval(inv4); clearInterval(inv5); clearInterval(inv6); clearInterval(inv7); };
     }, []);
 
     const confPercent = Math.round((status.latest_oracle_confidence || 0.85) * 100);
@@ -120,7 +148,7 @@ export default function Overview() {
             <div className="glass-panel hover-glow" style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderLeft: '4px solid var(--accent-cyan)' }}>
                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-cyan)', boxShadow: '0 0 10px var(--accent-cyan)', animation: 'pulse 2s infinite' }} />
-                     <h2 style={{ fontSize: '13px', color: '#fff', letterSpacing: '2px', fontWeight: 800, margin: 0 }}>SYSTEM STATUS:</h2>
+                     <h2 style={{ fontSize: '13px', color: 'var(--text-primary)', letterSpacing: '2px', fontWeight: 800, margin: 0 }}>SYSTEM STATUS:</h2>
                      <span style={{ fontSize: '14px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
                          {status.bot_message || "Initializing Sovereign Engine..."}
                      </span>
@@ -133,23 +161,23 @@ export default function Overview() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
                     {/* Daily Market Insights */}
-                    <div className="glass-panel hover-glow" style={{ padding: '24px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(0,240,255,0.2)' }}>
-                        <h2 style={{ fontSize: '14px', color: '#ffffff', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="glass-panel hover-glow" style={{ padding: '24px', background: 'var(--sub-panel-bg)', border: '1px solid rgba(0,240,255,0.2)' }}>
+                        <h2 style={{ fontSize: '14px', color: 'var(--text-primary)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <Radar size={16} className="neon-cyan" /> DAILY MARKET INSIGHTS
                         </h2>
                         <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-                            {intel.daily_insight || 'Sovereign is booting up. First comprehensive market insight will be available in ~10 minutes.'}
+                            {intel.daily_insight || 'Sovereign is booting up. First comprehensive market insight will be available in ~3 minutes.'}
                         </p>
                     </div>
 
                     {/* Ledger Balance & Equity Curve */}
                     <div className="glass-panel hover-glow" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
                         <div>
-                            <h2 style={{ fontSize: '14px', color: '#ffffff', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px', fontWeight: 700 }}>
+                            <h2 style={{ fontSize: '14px', color: 'var(--text-primary)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px', fontWeight: 700 }}>
                                 LEDGER BALANCE
                             </h2>
                             <div className="neon-cyan" style={{ fontSize: '36px', fontFamily: 'var(--font-mono)', fontWeight: 900 }}>
-                                ₹{status.wallet_balance ? status.wallet_balance.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '1,00,000.00'}
+                                ₹{status.wallet_balance ? status.wallet_balance.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '1,00,000.0'}
                             </div>
                         </div>
 
@@ -163,8 +191,9 @@ export default function Overview() {
                                         </linearGradient>
                                     </defs>
                                     <Tooltip
-                                        contentStyle={{ background: 'rgba(15,23,42,0.9)', border: '1px solid rgba(0,240,255,0.3)', borderRadius: '8px', fontSize: '12px', color: '#fff' }}
+                                        contentStyle={{ background: 'rgba(15,23,42,0.9)', border: '1px solid rgba(0,240,255,0.3)', borderRadius: '8px', fontSize: '12px', color: 'var(--text-primary)' }}
                                         itemStyle={{ color: 'var(--accent-cyan)', fontWeight: 700 }}
+                                        formatter={(value: any) => [`₹${Number(value).toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`, 'balance']}
                                     />
                                     <XAxis dataKey="name" hide={true} />
                                     <YAxis hide={true} domain={['auto', 'auto']} />
@@ -176,14 +205,14 @@ export default function Overview() {
 
                     {/* AI Performance Metrics & Oracle Pulse */}
                     <div className="glass-panel hover-glow" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', height: 'auto', minHeight: '414px', justifyContent: 'center' }}>
-                        <h2 style={{ fontSize: '14px', color: '#ffffff', letterSpacing: '2px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, margin: 0 }}>
+                        <h2 style={{ fontSize: '14px', color: 'var(--text-primary)', letterSpacing: '2px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, margin: 0 }}>
                             <Cpu size={16} /> AI PERFORMANCE CORTEX
                         </h2>
                         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: '24px', alignItems: 'center' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                                 <div>
                                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', letterSpacing: '1px' }}>WIN RATE</div>
-                                    <div style={{ fontSize: '28px', color: '#fff', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{status.ai_accuracy || '78.4'}%</div>
+                                    <div style={{ fontSize: '28px', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{status.ai_accuracy || '78.4'}%</div>
                                 </div>
                                 <div>
                                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px', letterSpacing: '1px' }}>CONFIDENCE</div>
@@ -230,7 +259,7 @@ export default function Overview() {
 
                     {/* Sector Hotspots from Intel */}
                     <div className="glass-panel" style={{ padding: '20px' }}>
-                        <h2 style={{ fontSize: '14px', color: '#ffffff', letterSpacing: '2px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
+                        <h2 style={{ fontSize: '14px', color: 'var(--text-primary)', letterSpacing: '2px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
                             <TrendingUp size={16} /> SECTOR HOTSPOTS
                         </h2>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
@@ -254,7 +283,7 @@ export default function Overview() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <Globe size={18} color={defconColor} />
-                                <h2 style={{ fontSize: '14px', color: '#ffffff', letterSpacing: '2px', fontWeight: 700 }}>GLOBAL INTELLIGENCE ENGINE</h2>
+                                <h2 style={{ fontSize: '14px', color: 'var(--text-primary)', letterSpacing: '2px', fontWeight: 700 }}>GLOBAL INTELLIGENCE ENGINE</h2>
                             </div>
                             <div style={{ background: defconBg, color: defconColor, padding: '4px 12px', borderRadius: '4px', fontSize: '11px', fontWeight: 800, letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 {defcon === 'SAFE' ? <Shield size={12} /> : <AlertTriangle size={12} />}
@@ -262,11 +291,11 @@ export default function Overview() {
                             </div>
                         </div>
                         <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-                            {intel.justification || 'Global intelligence engine warming up. First report in ~10 minutes after server starts.'}
+                            {intel.justification || 'Global intelligence engine warming up. First report in ~3 minutes after server starts.'}
                         </p>
 
                         {/* AI STRATEGIC CONVICTION SCORE */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '20px', padding: '16px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '20px', padding: '16px', background: 'var(--sub-panel-bg)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px' }}>
                             <div>
                                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', letterSpacing: '1.5px', fontWeight: 700, marginBottom: '6px' }}>AI DECISION CONVICTION SCORE</div>
                                 <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>Aggregated intelligence certainty based on live market models.</div>
@@ -276,7 +305,7 @@ export default function Overview() {
                                     <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="5" />
                                     <circle cx="28" cy="28" r="24" fill="none" stroke="var(--accent-cyan)" strokeWidth="5" strokeDasharray="150.8" strokeDashoffset={150.8 - (150.8 * (Math.round((directive.confidence || status.latest_oracle_confidence || 0.82) * 100) / 100))} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1.5s ease-out' }} />
                                 </svg>
-                                <div style={{ fontSize: '15px', fontWeight: 900, color: '#fff', fontFamily: 'var(--font-mono)', zIndex: 1, textShadow: '0 0 10px rgba(0,240,255,0.5)' }}>
+                                <div style={{ fontSize: '15px', fontWeight: 900, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', zIndex: 1, textShadow: '0 0 10px rgba(0,240,255,0.5)' }}>
                                     {Math.round((directive.confidence || status.latest_oracle_confidence || 0.82) * 100)}%
                                 </div>
                             </div>
@@ -288,34 +317,54 @@ export default function Overview() {
                         )}
                     </div>
 
-                    {/* AI Macro Directive */}
-                    <div className="glass-panel" style={{ padding: '24px', background: directive.action && directive.action !== 'NONE' ? `${directiveColor}08` : undefined, border: directive.action && directive.action !== 'NONE' ? `1px solid ${directiveColor}33` : undefined }}>
+                    {/* REALIZED NET P&L */}
+                    <div className="glass-panel" style={{ padding: '24px', borderLeft: `4px solid ${realizedPnl >= 0 ? 'var(--accent-green)' : 'var(--accent-danger)'}` }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                            <Zap size={18} color="var(--accent-purple)" />
-                            <h2 style={{ fontSize: '14px', color: '#ffffff', letterSpacing: '2px', fontWeight: 700 }}>MACRO TRADING DIRECTIVE</h2>
+                            {realizedPnl >= 0 ? <TrendingUp size={18} color="var(--accent-green)" /> : <TrendingDown size={18} color="var(--accent-danger)" />}
+                            <h2 style={{ fontSize: '14px', color: 'var(--text-primary)', letterSpacing: '2px', fontWeight: 700, margin: 0 }}>REALIZED NET P&L</h2>
+                            <div style={{ marginLeft: 'auto', fontSize: '9px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', letterSpacing: '1px' }}>UPDATES EVERY TRADE</div>
                         </div>
 
-                        {directive.action && directive.action !== 'NONE' ? (
-                            <>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
-                                    <div style={{ fontSize: '24px', fontFamily: 'var(--font-mono)', fontWeight: 900, color: directiveColor }}>
-                                        {directive.action}
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '18px', fontWeight: 700, color: '#fff' }}>{directive.symbol || 'N/A'}</div>
-                                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                                            Confidence: <span style={{ color: 'var(--accent-cyan)', fontWeight: 700 }}>{Math.round((directive.confidence || 0) * 100)}%</span>
-                                        </div>
-                                    </div>
+                        {/* Hero value + sparkline side by side */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                            {/* Left: big number */}
+                            <div style={{ flexShrink: 0 }}>
+                                <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '2px', marginBottom: '6px', fontFamily: 'var(--font-mono)' }}>CLOSED TRADES P&L</div>
+                                <div style={{ fontSize: '36px', fontWeight: 900, fontFamily: 'var(--font-mono)', color: realizedPnl >= 0 ? 'var(--accent-green)' : 'var(--accent-danger)', textShadow: `0 0 20px ${realizedPnl >= 0 ? 'rgba(0,255,102,0.3)' : 'rgba(255,0,60,0.3)'}`, lineHeight: 1 }}>
+                                    {realizedPnl >= 0 ? '+' : ''}₹{realizedPnl.toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
                                 </div>
-                                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-                                    <ChevronRight size={14} style={{ marginTop: '3px', flexShrink: 0 }} />{directive.rationale}
-                                </p>
-                            </>
-                        ) : (
-                            <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                                ⚡ NO ACTIVE DIRECTIVE. Market is in observation mode. Sovereign is accumulating intel for the next trade signal.
-                            </p>
+                                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: '6px' }}>
+                                    {realizedHistory.length > 1 ? `${realizedHistory.length - 1} closed trades` : 'No closed trades yet'}
+                                </div>
+                            </div>
+
+                            {/* Right: sparkline graph */}
+                            {realizedHistory.length > 1 && (
+                                <div style={{ flex: 1, height: '80px', minWidth: 0 }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={realizedHistory}>
+                                            <defs>
+                                                <linearGradient id="colorPnl" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor={realizedPnl >= 0 ? 'var(--accent-green)' : 'var(--accent-danger)'} stopOpacity={0.3} />
+                                                    <stop offset="95%" stopColor={realizedPnl >= 0 ? 'var(--accent-green)' : 'var(--accent-danger)'} stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <Tooltip
+                                                contentStyle={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(0,240,255,0.3)', borderRadius: '8px', fontSize: '11px', color: 'var(--text-primary)' }}
+                                                formatter={(value: any) => [`₹${Number(value).toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}`, 'P&L']}
+                                                labelStyle={{ color: 'var(--text-muted)', fontSize: '9px' }}
+                                            />
+                                            <Area type="monotone" dataKey="pnl" stroke={realizedPnl >= 0 ? 'var(--accent-green)' : 'var(--accent-danger)'} strokeWidth={2} fillOpacity={1} fill="url(#colorPnl)" isAnimationActive={false} dot={false} />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            )}
+                        </div>
+
+                        {realizedPnl === 0 && realizedHistory.length <= 1 && (
+                            <div style={{ marginTop: '12px', textAlign: 'center', padding: '12px', color: 'var(--text-muted)', fontSize: '11px', fontFamily: 'var(--font-mono)', background: 'rgba(255,255,255,0.02)', borderRadius: '6px' }}>
+                                P&L graph will appear after your first closed trade.
+                            </div>
                         )}
                     </div>
 
@@ -349,7 +398,7 @@ export default function Overview() {
                                 <>
                                     {/* Header with navigation */}
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <h2 style={{ fontSize: '14px', color: '#ffffff', letterSpacing: '2px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                                        <h2 style={{ fontSize: '14px', color: 'var(--text-primary)', letterSpacing: '2px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
                                             <Newspaper size={15} className="neon-cyan" /> LIVE NEWS FEED
                                         </h2>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -424,7 +473,7 @@ export default function Overview() {
                                                         </span>
                                                     </div>
                                                     {/* Headline */}
-                                                    <div style={{ fontSize: '11px', color: '#fff', fontWeight: 600, lineHeight: 1.4, marginBottom: '6px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                                    <div style={{ fontSize: '11px', color: 'var(--text-primary)', fontWeight: 600, lineHeight: 1.4, marginBottom: '6px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                                                         {article.title}
                                                     </div>
                                                     {/* Source + time */}
@@ -475,7 +524,7 @@ export default function Overview() {
 
                 {/* PERFORMANCE ANALYTICS */}
                 <div className="glass-panel" style={{ padding: '24px' }}>
-                    <h2 style={{ fontSize: '14px', color: '#ffffff', letterSpacing: '2px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
+                    <h2 style={{ fontSize: '14px', color: 'var(--text-primary)', letterSpacing: '2px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
                         <TrendingUp size={16} /> PERFORMANCE ANALYTICS
                     </h2>
 
@@ -495,7 +544,7 @@ export default function Overview() {
                                             dataKey="value" stroke="none"
                                         >
                                             <Cell key="cell-0" fill="var(--accent-green)" />
-                                            <Cell key="cell-1" fill="rgba(255,255,255,0.1)" />
+                                            <Cell key="cell-1" fill="var(--sub-panel-border)" />
                                         </Pie>
                                         <Tooltip
                                             contentStyle={{ background: 'rgba(15,23,42,0.9)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
@@ -514,9 +563,9 @@ export default function Overview() {
                                         { sector: 'TECH', alloc: 35 }, { sector: 'FIN', alloc: 25 }, { sector: 'ENG', alloc: -15 }, { sector: 'FMCG', alloc: 10 }
                                     ]}>
                                         <Tooltip
-                                            cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                                            cursor={{ fill: 'var(--sub-panel-border)' }}
                                             contentStyle={{ background: 'rgba(15,23,42,0.9)', border: '1px solid rgba(0,240,255,0.3)', borderRadius: '8px', fontSize: '12px' }}
-                                            itemStyle={{ color: '#ffffff' }}
+                                            itemStyle={{ color: 'var(--text-primary)' }}
                                         />
                                         <XAxis dataKey="sector" stroke="var(--text-muted)" fontSize={10} tickLine={false} axisLine={false} />
                                         <Bar dataKey="alloc" radius={[4, 4, 0, 0]}>
@@ -542,24 +591,24 @@ export default function Overview() {
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                                 <thead>
-                                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', color: 'var(--text-muted)', textAlign: 'left' }}>
-                                        <th style={{ padding: '12px 0 12px 16px', fontWeight: 600 }}>TICKER</th>
-                                        <th style={{ padding: '12px 16px', fontWeight: 600 }}>TIME</th>
-                                        <th style={{ padding: '12px 16px', fontWeight: 600 }}>ACTION</th>
-                                        <th style={{ padding: '12px 16px', fontWeight: 600 }}>PRICE</th>
-                                        <th style={{ padding: '12px 16px', fontWeight: 600 }}>CONFIDENCE</th>
+                                    <tr style={{ borderBottom: '1px solid var(--sub-panel-border)', color: 'var(--text-primary)', textAlign: 'left' }}>
+                                        <th style={{ padding: '12px 0 12px 16px', fontWeight: 800 }}>TICKER</th>
+                                        <th style={{ padding: '12px 16px', fontWeight: 800 }}>TIME</th>
+                                        <th style={{ padding: '12px 16px', fontWeight: 800 }}>ACTION</th>
+                                        <th style={{ padding: '12px 16px', fontWeight: 800 }}>PRICE</th>
+                                        <th style={{ padding: '12px 16px', fontWeight: 800 }}>CONFIDENCE</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {trades.slice(0, 4).map((t, idx) => {
                                         return (
                                         <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)', background: idx % 2 === 0 ? 'rgba(0,0,0,0.1)' : 'transparent' }}>
-                                            <td style={{ padding: '12px 0 12px 16px', color: '#fff', fontWeight: 600 }}>{t.symbol}</td>
+                                            <td style={{ padding: '12px 0 12px 16px', color: 'var(--text-primary)', fontWeight: 600 }}>{t.symbol}</td>
                                             <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '11px' }}>{t.timestamp || 'N/A'}</td>
                                             <td style={{ padding: '12px 16px', color: t.action === 'BUY' ? 'var(--accent-green)' : 'var(--accent-danger)', fontWeight: 700 }}>
                                                 {t.action}
                                             </td>
-                                            <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)' }}>₹{t.price}</td>
+                                            <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)' }}>₹{Number(t.price).toLocaleString('en-IN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</td>
                                             <td style={{ padding: '12px 16px', fontFamily: 'var(--font-mono)', color: 'var(--accent-cyan)' }}>
                                                 {t.confidence ? Math.round(t.confidence * 100) + '%' : 'N/A'}
                                             </td>
@@ -581,7 +630,7 @@ export default function Overview() {
 
                 {/* SYSTEM AGENTS NETWORK CARD */}
                 <div className="glass-panel" style={{ padding: '24px' }}>
-                    <h2 style={{ fontSize: '14px', color: '#ffffff', letterSpacing: '2px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
+                    <h2 style={{ fontSize: '14px', color: 'var(--text-primary)', letterSpacing: '2px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
                         <Radar size={16} /> SYSTEM AGENT NETWORK STATUS
                     </h2>
 
@@ -593,13 +642,13 @@ export default function Overview() {
                             { name: 'Librarian', role: 'Knowledge Vault (RAG)', status: 'SYNCED', ping: '105ms', icon: <Database size={16} /> },
                             { name: 'Execution', role: 'Broker API Link', status: 'CONNECTED', ping: '42ms', icon: <Zap size={16} /> }
                         ].map((agent, i) => (
-                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--sub-panel-border)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                                     <div style={{ color: 'var(--accent-cyan)', background: 'rgba(0, 240, 255, 0.1)', padding: '8px', borderRadius: '50%' }}>
                                         {agent.icon}
                                     </div>
                                     <div>
-                                        <div style={{ color: '#fff', fontSize: '14px', fontWeight: 600 }}>{agent.name}</div>
+                                        <div style={{ color: 'var(--text-primary)', fontSize: '14px', fontWeight: 600 }}>{agent.name}</div>
                                         <div style={{ color: 'var(--text-muted)', fontSize: '11px', letterSpacing: '0.5px' }}>{agent.role}</div>
                                     </div>
                                 </div>
@@ -617,7 +666,7 @@ export default function Overview() {
 
                 {/* ACTIVE STRATEGIES */}
                 <div className="glass-panel hover-glow" style={{ padding: '24px' }}>
-                    <h2 style={{ fontSize: '14px', color: '#ffffff', letterSpacing: '2px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
+                    <h2 style={{ fontSize: '14px', color: 'var(--text-primary)', letterSpacing: '2px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
                         <Target size={16} /> STRATEGY ALLOCATION
                     </h2>
 
@@ -631,14 +680,14 @@ export default function Overview() {
                             <div key={idx}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                                     <div>
-                                        <div style={{ fontSize: '13px', color: strat.active ? '#fff' : 'var(--text-muted)', fontWeight: 600 }}>{strat.name}</div>
+                                        <div style={{ fontSize: '13px', color: strat.active ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: 600 }}>{strat.name}</div>
                                         <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{strat.type}</div>
                                     </div>
-                                    <div style={{ fontSize: '14px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: strat.active ? '#fff' : 'var(--text-muted)' }}>
+                                    <div style={{ fontSize: '14px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: strat.active ? 'var(--text-primary)' : 'var(--text-muted)' }}>
                                         {strat.alloc}%
                                     </div>
                                 </div>
-                                <div style={{ height: '6px', width: '100%', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
+                                <div style={{ height: '6px', width: '100%', background: 'var(--sub-panel-border)', borderRadius: '3px', overflow: 'hidden' }}>
                                     <div style={{
                                         height: '100%',
                                         width: `${strat.alloc}%`,

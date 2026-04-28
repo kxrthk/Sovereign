@@ -62,12 +62,12 @@ function NewsCard({ article }: { article: Article }) {
             background: 'rgba(255,255,255,0.03)',
             border: '1px solid rgba(255,255,255,0.07)',
             borderTop: `3px solid ${catColor}`,
-            borderRadius: '12px',
-            padding: '18px 20px',
+            borderRadius: '16px',
+            padding: '24px 28px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '10px',
-            height: '290px',          /* fixed — all cards same size */
+            gap: '14px',
+            height: '420px',          /* fixed — all cards same size */
             boxSizing: 'border-box',
             overflow: 'hidden',
             transition: 'box-shadow 0.2s, transform 0.2s',
@@ -91,21 +91,21 @@ function NewsCard({ article }: { article: Article }) {
 
             {/* Headline */}
             <h3 style={{
-                fontSize: '16px', fontWeight: 800, color: '#f1f5f9', lineHeight: 1.4, margin: 0, flexShrink: 0,
+                fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.4, margin: 0, flexShrink: 0,
                 display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
             }}>
                 {article.title}
             </h3>
 
             {/* Source */}
-            <div style={{ fontSize: '12px', color: '#67e8f9', fontWeight: 700, flexShrink: 0 }}>{article.source}</div>
+            <div style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 700, flexShrink: 0 }}>{article.source}</div>
 
             {/* Up to 2 paragraphs, text clipped to available space */}
             <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '7px' }}>
                 {paragraphs.slice(0, 2).map((para, i) => (
                     <p key={i} style={{
-                        fontSize: '14px', color: '#94a3b8', lineHeight: 1.65, margin: 0,
-                        display: '-webkit-box', WebkitLineClamp: i === 0 ? 3 : 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
+                        fontSize: '15px', color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0,
+                        display: '-webkit-box', WebkitLineClamp: i === 0 ? 6 : 4, WebkitBoxOrient: 'vertical', overflow: 'hidden'
                     }}>
                         {para}
                     </p>
@@ -164,7 +164,7 @@ export default function NewsRoom() {
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                    <h2 style={{ fontSize: '17px', color: '#f1f5f9', letterSpacing: '2px', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                    <h2 style={{ fontSize: '17px', color: 'var(--text-primary)', letterSpacing: '2px', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
                         <Newspaper size={18} color="#00f0ff" /> NEWSROOM
                         <span style={{ fontSize: '11px', fontWeight: 700, color: '#22c55e', background: 'rgba(34,197,94,0.1)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(34,197,94,0.25)', letterSpacing: '1px' }}>TOP 6</span>
                     </h2>
@@ -183,22 +183,22 @@ export default function NewsRoom() {
                 </button>
             </div>
 
-            {/* 3-column scrollable grid — 30 cards, same size, latest at top */}
+            {/* 2-column scrollable grid — latest at top */}
             <div style={{
                 flex: 1,
                 overflowY: 'auto',
-                paddingRight: '4px',
+                paddingRight: '6px',
                 scrollbarWidth: 'thin',
                 scrollbarColor: 'rgba(0,240,255,0.2) transparent',
             }}>
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(3, 1fr)',
-                    gap: '14px',
+                    gridTemplateColumns: 'repeat(2, 1fr)',
+                    gap: '20px',
                     alignItems: 'start',
                 }}>
                     {loading
-                        ? Array.from({ length: 9 }).map((_, i) => <Skeleton key={i} />)
+                        ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} />)
                         : articles.slice(0, 30).map((article, i) => (
                             <NewsCard key={i} article={article} />
                         ))

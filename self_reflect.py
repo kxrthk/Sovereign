@@ -31,6 +31,7 @@ REFLECTIONS_DIR = "memories/reflections"
 BRAIN_PATH      = "memories/bot_brain.json"
 JOURNAL_PATH    = "trading_journal.csv"
 DECISION_LOG    = "memories/decision_log.json"
+SHADOW_JOURNAL  = "memories/shadow_journal.json"
 
 
 def _load_todays_trades() -> list:
@@ -60,6 +61,19 @@ def _load_todays_decisions() -> list:
     except (FileNotFoundError, json.JSONDecodeError):
         logger.warning("Decision log not found or invalid.")
     return decisions
+
+
+def _load_shadow_trades() -> list:
+    """Reads today's shadow trades from aggressive learning mode."""
+    today = datetime.date.today().isoformat()
+    shadows = []
+    try:
+        with open(SHADOW_JOURNAL, 'r') as f:
+            log = json.load(f)
+        shadows = [s for s in log if today in s.get("timestamp", "")]
+    except (FileNotFoundError, json.JSONDecodeError):
+        pass
+    return shadows
 
 
 def _get_rag_context(trades: list, decisions: list) -> str:
@@ -112,6 +126,24 @@ def _build_reflection_prompt(trades: list, decisions: list, brain: dict) -> str:
     trades_block = json.dumps(trades, indent=2) if trades else "  No trades executed today."
     dec_block    = json.dumps(decisions[-30:], indent=2) if decisions else "  No decisions logged."
 
+    # Shadow trades from aggressive learning mode
+    shadow_trades = _load_shadow_trades()
+    shadow_block  = ""
+    if shadow_trades:
+        executed_shadows = [s for s in shadow_trades if s.get('was_executed')]
+        skipped_shadows  = [s for s in shadow_trades if not s.get('was_executed')]
+        shadow_block = f"""
+AGGRESSIVE LEARNING SHADOW LOG ({len(shadow_trades)} total signals):
+  Executed: {len(executed_shadows)} trades (1 share each, learning mode)
+  Skipped:  {len(skipped_shadows)} signals (below threshold or HOLD)
+  Sample executed: {json.dumps(executed_shadows[:10], indent=2)}
+  Sample skipped:  {json.dumps(skipped_shadows[:10], indent=2)}
+
+IMPORTANT: Analyze the skipped signals especially. For each skipped signal that had a BUY/SELL
+recommendation, determine if NOT executing was a good decision or a missed opportunity.
+This is critical for improving the confidence threshold calibration.
+"""
+
     # Get RAG-augmented context
     rag_context = _get_rag_context(trades, decisions)
     rag_section = ""
@@ -136,6 +168,7 @@ TODAY'S TRADES:
 TODAY'S SCAN DECISIONS (last 30):
 {dec_block}
 {rag_section}
+{shadow_block}
 
 YOUR TASK — Produce a structured self-reflection with these exact sections:
 

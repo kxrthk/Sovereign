@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, LineChart, History, TerminalSquare, Eye, Settings, ShieldCheck, Newspaper, Radar, Activity, Briefcase, Brain } from 'lucide-react';
+import { LayoutDashboard, LineChart, History, TerminalSquare, Eye, Settings, ShieldCheck, Newspaper, Radar, Activity, Briefcase, Brain, Rocket, LayoutGrid, BookOpen, Calendar } from 'lucide-react';
 
 interface NavItem {
     to: string;
@@ -17,6 +17,7 @@ const SECTIONS: { title: string; items: NavItem[] }[] = [
             { to: '/oracle', label: 'Oracle Cortex', icon: Brain, badge: 'CORE', badgeColor: 'var(--accent-purple)' },
             { to: '/technicals', label: 'Technicals', icon: LineChart },
             { to: '/scanner', label: 'Alpha Scanner', icon: Radar, badge: 'NEW', badgeColor: 'var(--accent-green)' },
+            { to: '/pilot', label: 'Pilot Mode', icon: Rocket, badge: 'HOT', badgeColor: '#FF006E' },
             { to: '/funds', label: 'Mutual Funds', icon: Briefcase },
         ],
     },
@@ -25,7 +26,14 @@ const SECTIONS: { title: string; items: NavItem[] }[] = [
         items: [
             { to: '/news', label: 'NewsRoom', icon: Newspaper, badge: 'LIVE', badgeColor: 'var(--accent-cyan)' },
             { to: '/vision', label: 'Vision Center', icon: Eye },
-            { to: '/cortex', label: 'Cortex Log', icon: TerminalSquare },
+        ],
+    },
+    {
+        title: 'ANALYTICS',
+        items: [
+            { to: '/heatmap', label: 'Portfolio Heatmap', icon: LayoutGrid, badge: 'NEW', badgeColor: 'var(--accent-cyan)' },
+            { to: '/journal', label: 'Trade Journal', icon: BookOpen },
+            { to: '/calendar', label: 'Eco Calendar', icon: Calendar },
         ],
     },
     {
@@ -46,7 +54,7 @@ export default function Sidebar() {
                     <ShieldCheck size={26} />
                 </div>
                 <div className="logo-text">
-                    <h1 style={{ fontSize: '20px', fontWeight: 700, margin: 0, letterSpacing: '3px', background: 'linear-gradient(to right, #fff, var(--accent-cyan))', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>SOVEREIGN</h1>
+                    <h1 style={{ fontSize: '20px', fontWeight: 700, margin: 0, letterSpacing: '3px', background: 'linear-gradient(to right, var(--text-primary), var(--accent-cyan))', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>SOVEREIGN</h1>
                     <span className="version-badge" style={{ fontSize: '9px', fontWeight: 700, color: 'var(--accent-cyan)', background: 'rgba(0, 240, 255, 0.1)', padding: '2px 6px', borderRadius: '4px', letterSpacing: '2px', border: '1px solid rgba(0, 240, 255, 0.2)' }}>V3.0 REACT</span>
                 </div>
             </div>
@@ -92,7 +100,7 @@ export default function Sidebar() {
             <div style={{ padding: '14px 16px', background: 'rgba(0, 240, 255, 0.04)', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                     <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--accent-cyan)', boxShadow: '0 0 8px var(--accent-cyan)' }} className="glow-pulse" />
-                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#fff', letterSpacing: '1px' }}>SYSTEM ONLINE</span>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '1px' }}>SYSTEM ONLINE</span>
                 </div>
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Activity size={9} /> React Build // Vite

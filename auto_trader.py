@@ -12,6 +12,8 @@ import json
 
 
 TRADE_COOLDOWN_SECONDS = 30 * 60   # 30 minutes between re-entry on the same symbol
+AGGRESSIVE_COOLDOWN_SECONDS = 5 * 60  # 5 minutes cooldown in aggressive learning mode
+SHADOW_JOURNAL_PATH = "memories/shadow_journal.json"
 
 def run_auto_pilot():
     print("\n[AUTO-PILOT] Engaging Autonomous Trading Systems...")
@@ -238,23 +240,32 @@ def run_auto_pilot():
             
             base_min_conf = risk_manager.get_required_confidence()
 
-            # Apply Risk Tolerance Configuration
-            if risk_tolerance == "CONSERVATIVE":
-                base_min_conf += 0.10
-            elif risk_tolerance == "AGGRESSIVE":
-                base_min_conf -= 0.10
+            # ── AGGRESSIVE LEARNING MODE ────────────────────────────────
+            # When AGGRESSIVE: drop confidence to 0.45, force 1 share,
+            # reduce cooldowns, and log ALL signals for AI to learn from.
+            # Other modes are UNAFFECTED.
+            is_aggressive_learn = (risk_tolerance == "AGGRESSIVE")
 
-            # Regime-smart confidence gate:
-            # CHOPPY markets demand higher bar across the board
-            if regime == "CHOPPY":
-                base_min_conf = min(base_min_conf + 0.05, 0.95)  # +5%, cap at 95%
-                
-            # ── LEARNING QUOTA ──────────────────────────────────────────
-            if trades_executed_today < 5:
-                base_min_conf -= 0.15  # Loosen requirements to guarantee trades
-                set_status(f"🧠 Learning Mode: Hunting for Trades ({trades_executed_today}/5)")
+            if is_aggressive_learn:
+                base_min_conf = 0.45   # Take almost every signal
+                active_cooldown = AGGRESSIVE_COOLDOWN_SECONDS
+                set_status(f"⚡ AGGRESSIVE LEARNING: Trading every signal · 1 share · {trades_executed_today} trades today")
             else:
-                set_status("✅ Active: Scanning for Opportunities")
+                active_cooldown = TRADE_COOLDOWN_SECONDS
+                # Apply Risk Tolerance Configuration (non-aggressive)
+                if risk_tolerance == "CONSERVATIVE":
+                    base_min_conf += 0.10
+
+                # Regime-smart confidence gate
+                if regime == "CHOPPY":
+                    base_min_conf = min(base_min_conf + 0.05, 0.95)
+
+                # Learning quota (normal modes only)
+                if trades_executed_today < 5:
+                    base_min_conf -= 0.15
+                    set_status(f"🧠 Learning Mode: Hunting for Trades ({trades_executed_today}/5)")
+                else:
+                    set_status("✅ Active: Scanning for Opportunities")
             
             # Load World View & Sector Biases
             world_view = {}
@@ -306,8 +317,8 @@ def run_auto_pilot():
                 # ── TRADE COOLDOWN CHECK ──────────────────────────────
                 last_trade_ts = cooldowns.get(symbol, 0)
                 elapsed = time.time() - last_trade_ts
-                if elapsed < TRADE_COOLDOWN_SECONDS:
-                    remaining_min = int((TRADE_COOLDOWN_SECONDS - elapsed) / 60)
+                if elapsed < active_cooldown:
+                    remaining_min = int((active_cooldown - elapsed) / 60)
                     print(f"   [COOL] {symbol}: Cooldown active. {remaining_min}m until re-entry allowed.")
                     continue
                 # ─────────────────────────────────────────────────────
@@ -327,31 +338,31 @@ def run_auto_pilot():
                 if signal != "HOLD" and confidence >= min_conf:
                     print(f"   >>> SIGNAL DETECTED: {signal} {symbol} ({analysis.get('reason', 'N/A')})")
                     
-                    # 3. Position Sizing (The Risk Check)
-                    quantity = risk_manager.get_position_size(price)
-                    
-                    # 3.5 Dynamic Sizing based on Asset Sentiment
-                    asset_sentiment = sentiment_data.get(symbol, 0.0)
-                    if asset_sentiment >= 0.7:
-                        quantity = int(quantity * 1.2)    # High confidence news = size up 20%
-                    elif asset_sentiment <= -0.5:
-                        quantity = int(quantity * 0.5)    # Bad news = cut position 50%
+                    # 3. Position Sizing
+                    if is_aggressive_learn:
+                        # AGGRESSIVE MODE: always 1 share — minimize cost, maximize learning
+                        quantity = 1
+                        print(f"   [AGGR] Forced 1-share learning trade for {symbol}")
+                    else:
+                        quantity = risk_manager.get_position_size(price)
+                        # Dynamic Sizing based on Asset Sentiment
+                        asset_sentiment = sentiment_data.get(symbol, 0.0)
+                        if asset_sentiment >= 0.7:
+                            quantity = int(quantity * 1.2)
+                        elif asset_sentiment <= -0.5:
+                            quantity = int(quantity * 0.5)
                     
                     executed = False
                     if quantity > 0:
-                        # Regime-aware position sizing
-                        if regime == "TRENDING":
-                            quantity = int(quantity * 1.25)  # Size up in clean trending markets
-                        elif regime == "CHOPPY":
-                            quantity = int(quantity * 0.75)  # Size down in noisy markets
-                            
-                        # Apply Risk Tolerance scaling
-                        if risk_tolerance == "CONSERVATIVE":
-                            quantity = int(quantity * 0.5)
-                        elif risk_tolerance == "AGGRESSIVE":
-                            quantity = int(quantity * 1.5)
-                            
-                        quantity = max(1, quantity)          # Never drop below 1 share
+                        if not is_aggressive_learn:
+                            # Regime-aware sizing (skip in aggressive — already 1 share)
+                            if regime == "TRENDING":
+                                quantity = int(quantity * 1.25)
+                            elif regime == "CHOPPY":
+                                quantity = int(quantity * 0.75)
+                            if risk_tolerance == "CONSERVATIVE":
+                                quantity = int(quantity * 0.5)
+                            quantity = max(1, quantity)
 
                         print(f"   [EXEC] Placing Order: {signal} {quantity} {symbol} @ {price:.2f} [{regime}]...")
                         try:
@@ -360,7 +371,6 @@ def run_auto_pilot():
                                 print(f"      [OK] ORDER FILLED. ID: {result.get('order_id', 'N/A')}")
                                 risk_manager.update_pnl(0)
                                 trades_executed_today += 1
-                                # Set cooldown for this symbol
                                 cooldowns[symbol] = time.time()
                                 with open(cooldown_path, 'w') as f:
                                     json.dump(cooldowns, f, indent=4)
@@ -376,6 +386,33 @@ def run_auto_pilot():
                     executed = False
                     print(f"   [WAIT] {symbol}: {signal} ({analysis.get('reason', 'N/A')})")
 
+                # ── SHADOW JOURNAL — log what AI WOULD have done ──────
+                # In AGGRESSIVE mode, log every single signal (even skipped)
+                # so self_reflect can later compare shadow vs reality.
+                if is_aggressive_learn:
+                    shadow_entry = {
+                        "timestamp":  datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "symbol":     symbol,
+                        "signal":     signal,
+                        "confidence": round(confidence, 3),
+                        "price":      price,
+                        "reason":     analysis.get('reason', 'N/A'),
+                        "rsi":        analysis.get('rsi', 'N/A'),
+                        "regime":     regime,
+                        "was_executed": (signal != "HOLD" and confidence >= min_conf),
+                    }
+                    try:
+                        shadow_log = []
+                        if os.path.exists(SHADOW_JOURNAL_PATH):
+                            with open(SHADOW_JOURNAL_PATH, 'r') as f:
+                                shadow_log = json.load(f)
+                        shadow_log.append(shadow_entry)
+                        shadow_log = shadow_log[-1000:]  # Keep last 1000 shadow entries
+                        with open(SHADOW_JOURNAL_PATH, 'w') as f:
+                            json.dump(shadow_log, f, indent=2)
+                    except Exception as e:
+                        print(f"   [SHADOW] Failed to write shadow journal: {e}")
+
                 # ── DECISION LOG — record every decision ──────────────
                 decision_log.append({
                     "timestamp":  datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -386,7 +423,8 @@ def run_auto_pilot():
                     "rsi":        analysis.get('rsi', 'N/A'),
                     "regime":     regime,
                     "defcon":     current_defcon,
-                    "executed":   (signal != "HOLD" and confidence >= min_conf)
+                    "executed":   (signal != "HOLD" and confidence >= min_conf),
+                    "mode":       "AGGRESSIVE_LEARN" if is_aggressive_learn else "NORMAL"
                 })
                 # ─────────────────────────────────────────────────────
             

@@ -403,33 +403,65 @@ def get_flight_recorder():
          try:
              with open("memories/paper_trades.json", 'r') as f:
                  trades_data = json.load(f)
-                 formatted_trades = []
-                 for t in trades_data[-50:]:  # Return last 50 trades
-                     
-                     raw_ts = t.get("timestamp", str(datetime.now()))
-                     try:
-                         # Handle "YYYY-MM-DD HH:MM:SS.ffffff" format correctly
-                         clean_ts = raw_ts.split('.')[0]
-                         if 'T' in clean_ts:
-                              dt_obj = datetime.strptime(clean_ts, "%Y-%m-%dT%H:%M:%S")
-                         else:
-                              dt_obj = datetime.strptime(clean_ts, "%Y-%m-%d %H:%M:%S")
-                         formatted_ts = dt_obj.strftime("%d %b %Y, %H:%M:%S")
-                     except Exception:
-                         formatted_ts = raw_ts
 
-                     formatted_trades.append({
-                         "symbol": t.get("symbol", "N/A"),
-                         "action": t.get("action", "BUY"),
-                         "price": t.get("avg_price", 0.0),
-                         "qty": t.get("quantity", 0),
-                         "confidence": 0.80, # Mocked confidence as broker does not receive it
-                         "timestamp": formatted_ts
-                     })
-                 return formatted_trades
+             # Build a buy-price map for P&L calculation
+             buy_prices = {}  # symbol -> [prices]
+             for t in trades_data:
+                 sym = t.get("symbol", "")
+                 if t.get("action") == "BUY":
+                     if sym not in buy_prices:
+                         buy_prices[sym] = []
+                     for _ in range(t.get("quantity", 1)):
+                         buy_prices[sym].append(t.get("avg_price", t.get("price", 0)))
+
+             # Copy for consumption during P&L calc
+             bp_copy = {}
+             for sym, prices in buy_prices.items():
+                 bp_copy[sym] = list(prices)
+
+             formatted_trades = []
+             for t in trades_data[-100:]:
+                 raw_ts = t.get("timestamp", str(datetime.now()))
+                 try:
+                     clean_ts = raw_ts.split('.')[0]
+                     if 'T' in clean_ts:
+                          dt_obj = datetime.strptime(clean_ts, "%Y-%m-%dT%H:%M:%S")
+                     else:
+                          dt_obj = datetime.strptime(clean_ts, "%Y-%m-%d %H:%M:%S")
+                     formatted_ts = dt_obj.strftime("%d %b %Y, %H:%M:%S")
+                 except Exception:
+                     formatted_ts = raw_ts
+
+                 # Calculate per-trade P&L for SELL orders
+                 pnl = None
+                 sym = t.get("symbol", "")
+                 qty = t.get("quantity", 1)
+                 sell_price = t.get("avg_price", t.get("price", 0))
+                 if t.get("action") == "SELL" and sym in bp_copy:
+                     trade_pnl = 0.0
+                     for _ in range(qty):
+                         if bp_copy.get(sym):
+                             bp = bp_copy[sym].pop(0)
+                             trade_pnl += (sell_price - bp)
+                     pnl = round(trade_pnl, 2)
+
+                 formatted_trades.append({
+                     "order_id": t.get("order_id", ""),
+                     "symbol": sym or "N/A",
+                     "action": t.get("action", "BUY"),
+                     "price": sell_price,
+                     "qty": qty,
+                     "confidence": t.get("confidence", 0.80),
+                     "timestamp": formatted_ts,
+                     "taxes": t.get("taxes_paid", 0),
+                     "pnl": pnl,
+                     "source": t.get("source", "auto")
+                 })
+             return formatted_trades
          except Exception as e:
              print(f"Error reading paper_trades: {e}")
     return []
+
 
 from pydantic import BaseModel
 import base64
@@ -477,37 +509,34 @@ def vision_analyze(req: VisionRequest):
 
 @app.get("/api/chart_data/{symbol}")
 def get_chart_data(symbol: str):
-    # Fetch actual chart data via yfinance for the UI to render
+    """Serve 5-minute intraday candles for real-time charts. Uses unix epoch timestamps."""
     try:
-         df = yf.download(symbol, period="1mo", interval="1d", progress=False)
+         df = yf.download(symbol, period="5d", interval="5m", progress=False)
          chart_data = []
-         print(f"Server returning chart data for {symbol}: {len(df)} rows")
          if not df.empty:
              for idx, row in df.iterrows():
-                 date_str = idx.strftime('%Y-%m-%d')
-                 # Safely access MultiIndex or single index dataframe
                  try:
                      o = float(row['Open'].iloc[0]) if isinstance(row['Open'], pd.Series) else float(row['Open'])
                      h = float(row['High'].iloc[0]) if isinstance(row['High'], pd.Series) else float(row['High'])
                      l = float(row['Low'].iloc[0]) if isinstance(row['Low'], pd.Series) else float(row['Low'])
                      c = float(row['Close'].iloc[0]) if isinstance(row['Close'], pd.Series) else float(row['Close'])
                  except: 
-                     # Fallback for simple index
                      o = float(row['Open'])
                      h = float(row['High'])
                      l = float(row['Low'])
                      c = float(row['Close'])
                      
                  chart_data.append({
-                     "time": date_str,
-                     "open": o,
-                     "high": h,
-                     "low": l,
-                     "close": c
+                     "time": int(idx.timestamp()),
+                     "open": round(o, 2),
+                     "high": round(h, 2),
+                     "low": round(l, 2),
+                     "close": round(c, 2)
                  })
+         print(f"[CHART] {symbol}: {len(chart_data)} intraday candles served")
          return chart_data
     except Exception as e:
-         print(f"Chart data error: {e}")
+         print(f"Chart data error for {symbol}: {e}")
          return []
 
 @app.get("/api/news")
@@ -721,30 +750,12 @@ def get_dynamic_mutual_funds():
     response_data = []
     
     for fund in BASE_FUNDS:
-        fid = fund["id"]
-        
-        # Init state if first iteration
-        if fid not in mf_state:
-            mf_state[fid] = {
-                "perf": fund["base_perf"],
-                "safety": fund["base_safety"]
-            }
-            
-        # Random Brownian motion walk
-        drift_p = random.uniform(-1.5, 1.5)
-        drift_s = random.uniform(-0.5, 0.5)
-        
-        # Gravity back to base to prevent wild runaway
-        mf_state[fid]["perf"] = mf_state[fid]["perf"] + drift_p + (fund["base_perf"] - mf_state[fid]["perf"]) * 0.1
-        mf_state[fid]["safety"] = mf_state[fid]["safety"] + drift_s + (fund["base_safety"] - mf_state[fid]["safety"]) * 0.1
-        
-        perf_val = round(mf_state[fid]["perf"], 1)
-        
-        # Determine trend physically from the relationship to base
+        # Determine trend from CAGR (stable, deterministic)
+        cagr_val = float(fund["cagr3yr"].replace("%", ""))
         trend = "NEUTRAL"
-        if perf_val > fund["base_perf"] + 1.0:
+        if cagr_val > 25:
             trend = "BULLISH"
-        elif perf_val < fund["base_perf"] - 1.0:
+        elif cagr_val < 15:
             trend = "BEARISH"
             
         response_data.append({
@@ -752,8 +763,8 @@ def get_dynamic_mutual_funds():
             "name": fund["name"],
             "category": fund["category"],
             "description": fund["description"],
-            "performanceRate": perf_val,
-            "safetyRate": round(mf_state[fid]["safety"], 1),
+            "performanceRate": fund["base_perf"],
+            "safetyRate": fund["base_safety"],
             "aum": fund["aum"],
             "expenseRatio": fund["expenseRatio"],
             "trend": trend,
@@ -776,13 +787,37 @@ def get_intelligence_report():
             return {"error": str(e)}
     return {
         "defcon": "SAFE",
-        "justification": "Intelligence engine warming up. First report in 10 minutes.",
+        "justification": "Intelligence engine warming up. First report in 3 minutes.",
         "directive": {"action": "NONE", "symbol": None},
         "sector_hotspots": [],
         "headline_count": 0
     }
 
 
+
+@app.get("/api/symbol_search")
+def symbol_search(q: str = ""):
+    """Fuzzy search across watchlist symbols and company names."""
+    if not q or len(q) < 1:
+        return []
+    try:
+        with open("dynamic_watchlist.json", "r") as f:
+            watchlist = json.load(f)
+    except Exception:
+        return []
+    query = q.upper().strip()
+    results = []
+    seen = set()
+    for category, items in watchlist.items():
+        for item in items:
+            sym = item.get("symbol", "")
+            label = item.get("label", "")
+            if sym in seen:
+                continue
+            if query in sym.upper() or query in label.upper():
+                results.append({"symbol": sym, "label": label, "category": category})
+                seen.add(sym)
+    return results[:20]
 
 @app.get("/api/health")
 def health_check():
@@ -798,7 +833,104 @@ def trigger_kill_switch():
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+# ─── PILOT MODE: Manual Paper Trading Endpoints ───────────────────────────────
+
+class ManualOrderRequest(BaseModel):
+    symbol: str
+    action: str        # BUY | SELL
+    quantity: int
+    price: float
+
+@app.post("/api/manual_order")
+def place_manual_order(req: ManualOrderRequest):
+    """Allows a human to place a manual paper trade directly from the Pilot Mode UI."""
+    try:
+        from mock_broker import MockDhanClient
+        broker = MockDhanClient()
+
+        # Validate enough wallet for BUY
+        if req.action.upper() == "BUY":
+            balance = broker.get_fund_balance()
+            cost = req.price * req.quantity
+            if cost > balance:
+                return {"status": "error", "message": f"Insufficient funds. Need ₹{cost:,.2f}, have ₹{balance:,.2f}"}
+
+        order_response = broker.place_order(
+            req.symbol.upper(),
+            req.quantity,
+            req.action.upper(),
+            req.price
+        )
+        # Tag this trade as manual (so hero P&L can exclude it)
+        if order_response.get("status") == "success":
+            try:
+                import json as _json
+                pt_path = "memories/paper_trades.json"
+                with open(pt_path, 'r') as f:
+                    trades = _json.load(f)
+                if trades:
+                    trades[-1]["source"] = "manual"
+                    with open(pt_path, 'w') as f:
+                        _json.dump(trades, f, indent=4)
+            except: pass
+        return order_response
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.get("/api/positions")
+def get_positions():
+    """Returns current open positions from the paper trading ledger."""
+    try:
+        from mock_broker import MockDhanClient
+        broker = MockDhanClient()
+        net = broker.get_net_positions()
+        # Only return positions with non-zero qty
+        open_pos = [
+            {"symbol": sym, "quantity": data["quantity"], "avg_price": round(data["avg_price"], 2)}
+            for sym, data in net.items() if data["quantity"] != 0
+        ]
+        return open_pos
+    except Exception as e:
+        return []
+
+@app.get("/api/price/{symbol}")
+def get_live_price(symbol: str):
+    """Fetches the latest market price for a symbol using a reliable download approach."""
+    try:
+        sym = symbol.upper().strip()
+        if not sym.endswith(".NS") and not sym.endswith(".BO"):
+            sym += ".NS"
+
+        # Strategy 1: 1-day 1-minute bar (most real-time during market hours)
+        try:
+            df = yf.download(sym, period="1d", interval="1m", progress=False)
+            if df is not None and not df.empty:
+                # Flatten MultiIndex if needed
+                if hasattr(df.columns, 'levels'):
+                    df.columns = df.columns.droplevel(1)
+                close_val = df['Close'].dropna().iloc[-1]
+                price = float(close_val)
+                if price > 0:
+                    return {"symbol": sym, "price": round(price, 2)}
+        except Exception:
+            pass
+
+        # Strategy 2: Fallback — last 5 days daily close
+        df2 = yf.download(sym, period="5d", interval="1d", progress=False)
+        if df2 is not None and not df2.empty:
+            if hasattr(df2.columns, 'levels'):
+                df2.columns = df2.columns.droplevel(1)
+            close_val2 = df2['Close'].dropna().iloc[-1]
+            price2 = float(close_val2)
+            if price2 > 0:
+                return {"symbol": sym, "price": round(price2, 2)}
+
+        return {"symbol": sym, "price": 0.0, "error": "No data available"}
+    except Exception as e:
+        return {"symbol": symbol, "price": 0.0, "error": str(e)}
+
 app.mount("/assets", StaticFiles(directory="dashboard_premium"), name="assets")
+
 
 @app.get("/{full_path:path}")
 async def serve_react_app(full_path: str):
@@ -832,8 +964,8 @@ async def startup_event():
     from global_intelligence import intelligence_heartbeat
     print("[SERVER] Starting God-Level Free YFinance Engine...")
     asyncio.create_task(stream_live_data())
-    print("[SERVER] Starting Phase 12 Global Intelligence Heartbeat (10-minute loop)...")
-    asyncio.create_task(intelligence_heartbeat(interval_seconds=600))
+    print("[SERVER] Starting Phase 12 Global Intelligence Heartbeat (3-minute loop)...")
+    asyncio.create_task(intelligence_heartbeat(interval_seconds=180))
 
 if __name__ == "__main__":
     import uvicorn

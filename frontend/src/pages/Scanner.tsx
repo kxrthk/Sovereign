@@ -214,7 +214,7 @@ export default function Scanner() {
                             {/* SYMBOL */}
                             <div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff', fontFamily: 'var(--font-mono)' }}>{c.symbol.replace('.NS', '')}</div>
+                                    <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>{c.symbol.replace('.NS', '')}</div>
                                     {c.supertrend_bullish !== undefined && (
                                         <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: c.supertrend_bullish ? 'var(--accent-green)' : 'var(--accent-danger)' }} title={c.supertrend_bullish ? 'Supertrend Bullish' : 'Supertrend Bearish'} />
                                     )}

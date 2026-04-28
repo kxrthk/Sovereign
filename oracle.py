@@ -117,7 +117,7 @@ class Oracle:
             if not symbols:
                 return None
             df = yf.download(symbols, period=period, interval=interval,
-                             progress=False, show_errors=False, group_by='ticker', threads=True)
+                             progress=False, group_by='ticker', threads=True)
             if df is not None and not df.empty:
                 self._batch_cache[cache_key] = (df, now)
                 return df
@@ -257,8 +257,8 @@ class Oracle:
             if atr_pct_series is not None:
                 recent_atr = atr_pct_series.iloc[-20:]
                 atr_median = float(recent_atr.median()) if not recent_atr.empty and pd.notna(recent_atr.median()) else 0.3
-            # Dynamic threshold = 50% of the stock's own median ATR%, with 0.1% floor
-            atr_threshold = max(0.10, atr_median * 0.50)
+            # Dynamic threshold significantly lowered to prevent false HOLDs in normal markets 
+            atr_threshold = max(0.05, atr_median * 0.25)
 
             # ── Factor 5: Volume Surge ────────────────────────────────
             vol_cur = float(volume.iloc[-1]) if pd.notna(volume.iloc[-1]) else 0
@@ -778,11 +778,11 @@ class Oracle:
             buy_score *= adx_multiplier
             sell_score *= adx_multiplier
 
-            if buy_score > sell_score and buy_score >= 0.20:
+            if buy_score > sell_score and buy_score >= 0.10:
                 signal = "BUY"
                 confidence = min(buy_score, 1.0)
                 reason = " + ".join(reasons_buy) if reasons_buy else "Multi-factor BUY"
-            elif sell_score > buy_score and sell_score >= 0.20:
+            elif sell_score > buy_score and sell_score >= 0.10:
                 signal = "SELL"
                 confidence = min(sell_score, 1.0)
                 reason = " + ".join(reasons_sell) if reasons_sell else "Multi-factor SELL"

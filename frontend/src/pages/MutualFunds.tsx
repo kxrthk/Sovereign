@@ -100,69 +100,52 @@ export default function MutualFunds() {
     const [aiPrediction, setAiPrediction] = useState<number | null>(null);
     const [aiReasoning, setAiReasoning] = useState<string>('');
     const [predicting, setPredicting] = useState(false);
+    const [lastPredicted, setLastPredicted] = useState<string>('');
 
-    // AI Prediction debounce trigger
+    // Reset prediction when fund changes
     useEffect(() => {
-        if (!selectedFund) return;
-        const timer = setTimeout(async () => {
-            setPredicting(true);
-            try {
-                const res = await axios.post('/api/ai_predict_wealth', {
-                    fund_name: selectedFund.name,
-                    category: selectedFund.category,
-                    capital: calcAmount,
-                    years: calcYears,
-                    cagr_hint: selectedFund.cagr3yr
-                });
-                setAiPrediction(res.data.estimatedValue);
-                setAiReasoning(res.data.reasoning || '');
-            } catch {
-                // Fallback to math if API fails
-                const cagr = parseFloat(selectedFund.cagr3yr) / 100;
-                setAiPrediction(Math.round(calcAmount * Math.pow(1 + cagr, calcYears)));
-                setAiReasoning('Using historical CAGR due to connection issue.');
-            } finally {
-                setPredicting(false);
-            }
-        }, 700);
-        return () => clearTimeout(timer);
-    }, [calcAmount, calcYears, selectedFund]);
+        setAiPrediction(null);
+        setAiReasoning('');
+        setLastPredicted('');
+    }, [selectedFund?.id]);
+
+    // Explicit predict function — fires only on button click
+    const runPrediction = async () => {
+        if (!selectedFund || predicting) return;
+        setPredicting(true);
+        try {
+            const res = await axios.post('/api/ai_predict_wealth', {
+                fund_name: selectedFund.name,
+                category: selectedFund.category,
+                capital: calcAmount,
+                years: calcYears,
+                cagr_hint: selectedFund.cagr3yr
+            });
+            setAiPrediction(res.data.estimatedValue);
+            setAiReasoning(res.data.reasoning || '');
+        } catch {
+            const cagr = parseFloat(selectedFund.cagr3yr) / 100;
+            setAiPrediction(Math.round(calcAmount * Math.pow(1 + cagr, calcYears)));
+            setAiReasoning('Using historical CAGR due to connection issue.');
+        } finally {
+            setPredicting(false);
+            setLastPredicted(new Date().toLocaleTimeString());
+        }
+    };
 
     useEffect(() => {
         const fetchFunds = async () => {
             try {
                 const res = await axios.get('/api/mutual_funds');
                 setFunds(res.data);
-                
-                setSelectedFund(prev => {
-                    if (prev) {
-                        return res.data.find((f: MutualFund) => f.id === prev.id) || prev;
-                    }
-                    return null;
-                });
                 setLoading(false);
             } catch (err) {
                 console.error("Failed to fetch mutual funds API. Displaying static institutional parameters.", err);
-                // Fallback to static data if backend lacks the endpoint
                 if (funds.length === 0) setFunds(BACKUP_FUNDS);
-                
-                setSelectedFund(prev => {
-                    if (prev) {
-                        return BACKUP_FUNDS.find((f: MutualFund) => f.id === prev.id) || prev;
-                    }
-                    return null;
-                });
-                
                 setLoading(false);
             }
         };
-
-        // Initial fetch
         fetchFunds();
-
-        // Active Repetitive polling loop (every 5 seconds)
-        const interval = setInterval(fetchFunds, 5000);
-        return () => clearInterval(interval);
     }, []);
 
     return (
@@ -199,13 +182,13 @@ export default function MutualFunds() {
                                 <div style={{ fontSize: '9px', fontWeight: 800, color: 'var(--accent-cyan)', letterSpacing: '1.5px', textTransform: 'uppercase', marginBottom: '4px' }}>
                                     {fund.category}
                                 </div>
-                                <div style={{ fontSize: '16px', fontWeight: 700, color: '#fff', letterSpacing: '0.5px' }}>
+                                <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '0.5px' }}>
                                     {fund.name}
                                 </div>
                             </div>
 
                             {/* Circular Graphs Row */}
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: 'var(--sub-panel-bg)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.03)' }}>
                                 {/* Perf Graph */}
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                     <div style={{ height: '60px', width: '60px', position: 'relative' }}>
@@ -245,7 +228,7 @@ export default function MutualFunds() {
                             {/* Footer details */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '4px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-secondary)' }}>
-                                    <TrendingUp size={12} color="var(--accent-cyan)" /> 3Y CAGR: <span style={{ color: '#fff', fontWeight: 700 }}>{fund.cagr3yr}</span>
+                                    <TrendingUp size={12} color="var(--accent-cyan)" /> 3Y CAGR: <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{fund.cagr3yr}</span>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', color: 'var(--text-muted)' }}>
                                     <ArrowRight size={14} />
@@ -266,32 +249,32 @@ export default function MutualFunds() {
                         </button>
                         <div style={{ marginBottom: '28px' }}>
                             <span style={{ background: 'var(--accent-cyan)', color: '#000', fontSize: '10px', fontWeight: 800, padding: '4px 8px', borderRadius: '4px', letterSpacing: '1px' }}>{selectedFund.category}</span>
-                            <h2 style={{ fontSize: '24px', color: '#fff', margin: '12px 0 8px', letterSpacing: '1px' }}>{selectedFund.name}</h2>
+                            <h2 style={{ fontSize: '24px', color: 'var(--text-primary)', margin: '12px 0 8px', letterSpacing: '1px' }}>{selectedFund.name}</h2>
                             <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: '85%' }}>{selectedFund.description}</p>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
-                            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div style={{ background: 'var(--sub-panel-bg)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
                                 <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '6px' }}>CORE TREND</div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: 800, color: selectedFund.trend === 'BULLISH' ? 'var(--accent-green)' : selectedFund.trend === 'BEARISH' ? 'var(--accent-danger)' : 'var(--text-primary)' }}>
                                     {selectedFund.trend === 'BULLISH' ? <TrendingUp size={16} /> : selectedFund.trend === 'BEARISH' ? <BarChart2 size={16} /> : <Activity size={16} />} 
                                     {selectedFund.trend}
                                 </div>
                             </div>
-                            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div style={{ background: 'var(--sub-panel-bg)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
                                 <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '6px' }}>FINANCIAL AUM</div>
-                                <div style={{ fontSize: '15px', fontWeight: 800, color: '#fff' }}>{selectedFund.aum}</div>
+                                <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>{selectedFund.aum}</div>
                             </div>
-                            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div style={{ background: 'var(--sub-panel-bg)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
                                 <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '6px' }}>EXPENSE RATIO</div>
-                                <div style={{ fontSize: '15px', fontWeight: 800, color: '#fff' }}>{selectedFund.expenseRatio}</div>
+                                <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>{selectedFund.expenseRatio}</div>
                             </div>
-                            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div style={{ background: 'var(--sub-panel-bg)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
                                 <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '1px', marginBottom: '6px' }}>3YR CAGR</div>
                                 <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--accent-cyan)' }}>{selectedFund.cagr3yr}</div>
                             </div>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div style={{ background: 'var(--sub-panel-bg)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
                                 <h3 style={{ fontSize: '12px', color: 'var(--text-secondary)', letterSpacing: '1.5px', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                                     <PieChartIcon size={14} /> RELATIVE SECTOR WEIGHTS
                                 </h3>
@@ -319,16 +302,17 @@ export default function MutualFunds() {
                                 {/* Wealth Predictor Sub-Layout — AI Powered */}
                                 <div style={{ background: 'rgba(0,240,255,0.05)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(0,240,255,0.15)', marginTop: 'auto' }}>
                                     <div style={{ fontSize: '10px', color: 'var(--accent-cyan)', letterSpacing: '1px', fontWeight: 700, marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <span>FUTURE PREDICTOR (BASED ON {selectedFund.cagr3yr} CAGR)</span>
+                                        <span>AI WEALTH PREDICTOR</span>
+                                        {lastPredicted && <span style={{ fontSize: '8px', color: 'var(--text-muted)', fontWeight: 400 }}>Last: {lastPredicted}</span>}
                                     </div>
-                                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
                                         <div style={{ flex: 1 }}>
                                             <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginBottom: '4px' }}>CAPITAL (₹)</div>
                                             <input 
                                                 type="number" 
                                                 value={calcAmount} 
                                                 onChange={(e) => setCalcAmount(Math.max(0, Number(e.target.value)))}
-                                                style={{ width: '100%', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--border-light)', color: '#fff', padding: '6px 8px', borderRadius: '4px', fontSize: '12px', fontFamily: 'var(--font-mono)', outline: 'none' }}
+                                                style={{ width: '100%', background: 'var(--sub-panel-bg)', border: '1px solid var(--border-light)', color: 'var(--text-primary)', padding: '6px 8px', borderRadius: '4px', fontSize: '12px', fontFamily: 'var(--font-mono)', outline: 'none', boxSizing: 'border-box' }}
                                             />
                                         </div>
                                         <div style={{ flex: 0.5 }}>
@@ -337,19 +321,32 @@ export default function MutualFunds() {
                                                 type="number" 
                                                 value={calcYears} 
                                                 onChange={(e) => setCalcYears(Math.max(1, Number(e.target.value)))}
-                                                style={{ width: '100%', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--border-light)', color: '#fff', padding: '6px 8px', borderRadius: '4px', fontSize: '12px', fontFamily: 'var(--font-mono)', outline: 'none' }}
+                                                style={{ width: '100%', background: 'var(--sub-panel-bg)', border: '1px solid var(--border-light)', color: 'var(--text-primary)', padding: '6px 8px', borderRadius: '4px', fontSize: '12px', fontFamily: 'var(--font-mono)', outline: 'none', boxSizing: 'border-box' }}
                                             />
                                         </div>
-                                        <div style={{ flex: 1.2, textAlign: 'right', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-                                            <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginBottom: '2px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px' }}>
-                                                {predicting && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-cyan)', animation: 'pulseGlow 1s infinite' }} />}
-                                                AI EST. VALUE
-                                            </div>
-                                            <div style={{ fontSize: '17px', fontWeight: 800, color: predicting ? 'var(--text-muted)' : 'var(--accent-green)', fontFamily: 'var(--font-mono)', transition: 'color 0.4s' }}>
-                                                {aiPrediction !== null ? `₹${aiPrediction.toLocaleString('en-IN')}` : '—'}
+                                        <button
+                                            onClick={runPrediction}
+                                            disabled={predicting}
+                                            style={{
+                                                padding: '6px 14px', borderRadius: '6px', border: '1px solid var(--accent-cyan)',
+                                                background: predicting ? 'rgba(0,240,255,0.05)' : 'rgba(0,240,255,0.15)',
+                                                color: 'var(--accent-cyan)', cursor: predicting ? 'not-allowed' : 'pointer',
+                                                fontSize: '10px', fontWeight: 800, letterSpacing: '1px',
+                                                fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap',
+                                                opacity: predicting ? 0.6 : 1, transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            {predicting ? 'ANALYZING...' : 'PREDICT'}
+                                        </button>
+                                    </div>
+                                    {aiPrediction !== null && (
+                                        <div style={{ marginTop: '12px', padding: '10px', background: 'rgba(0,255,102,0.06)', borderRadius: '6px', border: '1px solid rgba(0,255,102,0.15)' }}>
+                                            <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginBottom: '4px' }}>AI ESTIMATED VALUE</div>
+                                            <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--accent-green)', fontFamily: 'var(--font-mono)' }}>
+                                                ₹{aiPrediction.toLocaleString('en-IN')}
                                             </div>
                                         </div>
-                                    </div>
+                                    )}
                                     {aiReasoning && (
                                         <div style={{ marginTop: '8px', fontSize: '9px', color: 'var(--text-muted)', lineHeight: 1.5, fontStyle: 'italic', borderTop: '1px solid rgba(0,240,255,0.08)', paddingTop: '8px' }}>
                                             🤖 {aiReasoning}
@@ -357,15 +354,15 @@ export default function MutualFunds() {
                                     )}
                                 </div>
                             </div>
-                            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div style={{ background: 'var(--sub-panel-bg)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
                                 <h3 style={{ fontSize: '12px', color: 'var(--text-secondary)', letterSpacing: '1.5px', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                                     <ShieldCheck size={14} /> TOP MANAGED ASSETS
                                 </h3>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                     {selectedFund.topHoldings.map((asset, i) => (
-                                        <div key={asset} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'rgba(255,255,255,0.03)', borderRadius: '6px' }}>
+                                        <div key={asset} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'var(--sub-panel-border)', borderRadius: '6px' }}>
                                             <div style={{ color: 'var(--accent-cyan)', fontSize: '11px', fontWeight: 800 }}>#{i + 1}</div>
-                                            <div style={{ color: '#fff', fontSize: '13px', fontWeight: 600 }}>{asset}</div>
+                                            <div style={{ color: 'var(--text-primary)', fontSize: '13px', fontWeight: 600 }}>{asset}</div>
                                             <CheckCircle2 size={14} color="var(--accent-green)" style={{ marginLeft: 'auto', opacity: 0.6 }} />
                                         </div>
                                     ))}

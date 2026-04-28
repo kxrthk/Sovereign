@@ -1,7 +1,7 @@
 """
 global_intelligence.py - The God-Level Global News Intelligence Engine
 ============================================================================
-Runs every 10 minutes via a background asyncio loop inside dashboard_server.py.
+Runs every 3 minutes via a background asyncio loop inside dashboard_server.py.
 
 Architecture:
   1. Scrapes 20+ global news RSS feeds spanning geopolitics, markets, war, tech.
@@ -301,9 +301,9 @@ def fire_trading_directive(report: dict):
         logger.info(f"[INTEL] No actionable directive this cycle. (action={action}, confidence={confidence:.0%})")
 
 
-async def intelligence_heartbeat(interval_seconds: int = 600):
+async def intelligence_heartbeat(interval_seconds: int = 180):
     """
-    Continuous async loop — fires the full global intelligence pipeline every 10 minutes.
+    Continuous async loop — fires the full global intelligence pipeline every 3 minutes.
     Integrated into FastAPI startup events in dashboard_server.py.
     """
     try:

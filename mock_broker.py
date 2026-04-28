@@ -164,7 +164,8 @@ class MockDhanClient:
                 print(f"MOCK BROKER: Bought {quantity} {symbol} @ {price}. Receipt: {order_id}")
                 return {"status": "success", "message": "Paper Order Placed", "order_id": order_id}
             else:
-                 print(f"MOCK BROKER: Insufficient Funds ({balance} < {total_cost})")
+                print(f"MOCK BROKER: Insufficient Funds ({balance} < {total_cost})")
+                return {"status": "error", "message": f"Insufficient funds. Need ₹{total_cost:,.2f}, wallet has ₹{balance:,.2f}"}
         elif action == "SELL":
              # Sell Side Taxes
             charges_breakdown = tax_engine.calculate_taxes(price, price, quantity) # Simplified
